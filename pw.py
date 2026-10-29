@@ -8,7 +8,7 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={'width': W, 'height': H}, device_scale_factor=float(os.environ.get('DPR', '1.5')))
     pg.on('console', lambda m: print('CONSOLE', m.text))
     pg.on('pageerror', lambda e: print('PAGEERROR', e))
-    pg.goto('file://' + os.getcwd() + '/' + os.environ.get('OUT', 'truck.html') + '?free=1&' + q)
+    pg.goto('file://' + os.getcwd() + '/' + os.environ.get('OUT', 'crane.html') + '?free=1&' + q)
     pg.wait_for_timeout(400)
     for a in acts:
         if a[0] == 'wait': pg.wait_for_timeout(a[1])

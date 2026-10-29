@@ -156,32 +156,21 @@ function orderParts(ps){
 
 /* ================= labels: anchors per part number (local point in a frame, moved like the part) ================= */
 const LBL = {
-  1: ['cab', [158, 48, 52]], 2: ['ch', [148, 31, 28]], 3: ['ch', [130, 30, 24]], 4: ['ch', [112, 25, 17.6]], 5: ['ch', [AX_R[1], 29, 13]],
-  6: ['ch', [60, 33.6, 19]], 7: ['ch', [AX_F, 48.2, 15], { pull: [0, 12, 0] }], 8: ['body', [100, 48, 58]], 9: ['gate', 'slide'], 10: ['body', 'ej'],
-  11: ['body', [72, 48, 40], { pull: [0, 14, 0] }], 12: ['gate', [20, 49, 58]], 13: ['body', [40.3, 48.4, 46]], 14: ['carr', [2.6, 36.6, 17]],
-  15: ['arm', [4.8, 36, 14]], 16: ['lift', [6, 39.4, 19]], 17: ['lift', [7, 38.6, 26]], 18: ['ch', [121, 29.8, 19.6]], 19: ['ch', [112, 45, 17]],
-  20: ['gate', [28, 51.6, 31.5]], 21: ['ch', [80, 29.8, 15.6]], 22: ['body', [128, 51, 34], { xo: [0, 12, 4] }], 23: ['gate', [17, 50.6, 37], { xo: [-10, 10, 0] }],
-  24: ['gate', [8.3, 25, 41.5], { xo: [-14, 0, 0] }], 25: ['gate', [26.6, 45, 68], { xo: [0, 0, 10] }] };
+  1: ['g', [12.4, 12.4, 5]], 2: ['cw', [-42.5, 4.05, 79]], 3: ['cj', [-30, 6.9, 87.4]], 4: ['jib', [13, 0, 89.2]], 5: ['lo', [0, 7.2, 84.5]],
+  6: ['cab', [3.5, 17.05, 90]], 7: ['jib', [62, 0, 94.8]], 8: ['trol', [0, 1.9, 88.6]], 9: ['hook', [0, 1.6, 45], { xo: [0, 0, -8*HKS] }], 10: ['s1', [5.4, 5.4, 8]],
+  11: ['top', [3.4, 3.4, 106]], 12: ['trol', [-TROL_SX, 0, RZ + ROPE_R]], 13: ['cj', [-24, 3, 95.4]], 14: ['jib', [35, 2.5, 106]], 15: ['cf', [4, 8.2, 70]],
+  16: ['cf', [CYL_X, 0, 68]], 17: ['cf', [3, 11.1, 72.6], { xo: [0, 16, 0] }], 18: ['cj', [-11, 3.4, 92]], 19: ['top', [4.6, -6.6, 96]], 20: ['top', [-1.6, 1.6, 123]],
+  21: ['top', [1.6, -1.6, 118]], 22: ['s1', [-3.9, 1, 6]], 23: ['cj', [-20, 4.2, 103]], 24: ['jib', [60, 0, 87.6]] };
 function lblPoint(n){
+  // a rope is not fixed to one frame (its ends follow what it is tied to): label the middle of its longest built piece
+  if (n === 12 || n === 24){
+    let best = null, bl = -1;
+    for (const q of PARTS) if (q.hose && q.n === n){ const l = Math.hypot(q.box[1][0] - q.box[0][0], q.box[1][1] - q.box[0][1], q.box[1][2] - q.box[0][2]); if (l > bl){ bl = l; best = q; } }
+    if (best) return avg(best.pts);
+  }
   const [fr, p, o] = LBL[n];
   use(fr, n, o || {});
-  let lp = p;
-  if (p === 'slide'){ const { Q } = packerGeo(GST); lp = [Q[0] + 9*slideU[0], YC, Q[1] + 9*slideU[1]]; }
-  if (p === 'ej') lp = [GST.ej, 46.8, 54];
-  return wpt(lp);
-}
-// which part numbers are working right now (their labels light up)
-function activeParts(st){
-  const a = new Set(), A = st.act;
-  if (st.pump){ a.add(18); a.add(20); a.add(21); }
-  if (A === 'lift'){ a.add(14); a.add(16); }
-  if (A === 'tip'){ a.add(15); a.add(16); }
-  if (A === 'blade' || A === 'slide') a.add(9);
-  if (A === 'eject') a.add(10);
-  if (A === 'gate') a.add(12);
-  if (st.pour > 0 && st.pour < 1) a.add(24);
-  if (st.hook > 0 && st.hook < 1 || st.clamp > 0 && st.clamp < 1) a.add(14);
-  return a;
+  return wpt(p);
 }
 const lblW = (t, fs) => [...t].reduce((a, c) => a + (c.charCodeAt(0) > 255 ? 1.05 : .62), 0)*fs + fs*3;
 function labelLayer(st, items, title, Zp, kk){
@@ -192,25 +181,73 @@ function labelLayer(st, items, title, Zp, kk){
   if (items.length){
     const xs = PARTS_SB, cx = (xs[0] + xs[2])/2;
     const L = [], R = [];
-    items.forEach((it, i) => { const c = { ...it, X: pts[i][0], Y: pts[i][1], w: u ? hgt*(it.n > 9 ? 1.3 : 1) : lblW(it.text, fs) }; (c.X < cx ? L : R).push(c); });
-    // keep the two columns about even
-    while (L.length > R.length + 3){ L.sort((a, b) => b.X - a.X); R.push(L.shift()); }
-    while (R.length > L.length + 3){ R.sort((a, b) => a.X - b.X); L.push(R.shift()); }
-    const top = { [-1]: vb.y + fs*1.2, [1]: vb.y + fs*1.2 };
-    if (btn && svgEl.getScreenCTM()){ const r = btn.getBoundingClientRect(), q = new DOMPoint(r.right, r.bottom + 14).matrixTransform(svgEl.getScreenCTM().inverse()); if (q.y > top[-1]) top[-1] = q.y + hgt/2; }
+    // a label picks the side and the row where its leader crosses the least of the other systems' parts (a tie: the side the anchor is on,
+    // the row nearest the anchor) and stays there
+    const Q = PARTS.filter(p => p.n || (p.fr === 'load' && !p.hose)).map(p => { const h = p.hl.map(q => Zp(q)); let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const q of h){ a = Math.min(a, q[0]); c = Math.max(c, q[0]); b = Math.min(b, q[1]); d = Math.max(d, q[1]); }
+      return { h, n: p.n, ld: !p.n, sy: p.sys, bb: [a, b, c, d], sg: h.reduce((t, q, i) => t + q[0]*h[(i + 1) % h.length][1] - h[(i + 1) % h.length][0]*q[1], 0) > 0 ? 1 : -1 }; });
+    const run = (a, b, sy) => { let t = 0, x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
+      for (const q of Q){ if (q.sy === sy || (q.ld && sy >= 0) || q.bb[2] < x0 || q.bb[0] > x1 || q.bb[3] < y0 || q.bb[1] > y1) continue;
+        let t0 = 0, t1 = 1, ins = true; const dx = b[0] - a[0], dy = b[1] - a[1], h = q.h;      // Cyrus-Beck: the part of the segment inside this convex hull
+        for (let i = 0; i < h.length && t1 > t0; i++){ const p0 = h[i], p1 = h[(i + 1) % h.length], ex = p1[0] - p0[0], ey = p1[1] - p0[1];
+          const nn = q.sg*(ex*(a[1] - p0[1]) - ey*(a[0] - p0[0])), dd = q.sg*(ex*dy - ey*dx); if (nn < 0) ins = false;
+          if (Math.abs(dd) < 1e-12){ if (nn < 0) t1 = -1; } else if (dd > 0) t0 = Math.max(t0, -nn/dd); else t1 = Math.min(t1, -nn/dd); }
+        if (t1 > t0 && !ins) t += (t1 - t0)*Math.hypot(dx, dy); }       // (a hull the leader starts inside is the thing it points at, not a crossing)
+      return t; };
+    // the buttons (left) and the readout (right) keep their corner clear, but only for a column that reaches under them
+    const base = vb.y + fs*1.2, blk = { [-1]: [-1e9, base], [1]: [1e9, base] };
+    if (btn && svgEl.getScreenCTM()){ const r = btn.getBoundingClientRect(), q = new DOMPoint(r.right, r.bottom + 14).matrixTransform(svgEl.getScreenCTM().inverse()); blk[-1] = [q.x, q.y + hgt/2]; }
     const sp2 = document.getElementById('stats'), vs = document.querySelector('.vset');
-    if (sp2 && svgEl.getScreenCTM()){ const r = (vs || sp2).getBoundingClientRect(), q = new DOMPoint(r.left, r.bottom + 10).matrixTransform(svgEl.getScreenCTM().inverse()); if (q.y > top[1]) top[1] = q.y + hgt/2; }
+    if (sp2 && svgEl.getScreenCTM()){ const r = (vs || sp2).getBoundingClientRect(), q = new DOMPoint(r.left, r.bottom + 10).matrixTransform(svgEl.getScreenCTM().inverse()); blk[1] = [q.x, q.y + hgt/2]; }
+    const topAt = (sd, x0, x1) => sd < 0 ? (x0 < blk[-1][0] ? Math.max(base, blk[-1][1]) : base) : (x1 > blk[1][0] ? Math.max(base, blk[1][1]) : base);
+    const mw = Math.max(...items.map(it => u ? hgt*1.3 : lblW(it.text, fs)));      // (the widest label: a side's column count)
     const bot = vb.y + vb.height - hgt;
+    const EXd = { [-1]: Math.max(vb.x + 4*kk + mw, xs[0] - 14*kk) + 5*kk, [1]: Math.min(vb.x + vb.width - 4*kk - mw, xs[2] + 14*kk) - 5*kk };      // (where a leader reaches its column: the slant ends 5 short of the label)
+    // the labels take their rows one after the other (the rows already taken on a side stay taken); working labels try top-down and bottom-up and keep the cheaper
+    const xing = (a, b, c, d) => { const o = (p, q, r) => Math.sign((q[0] - p[0])*(r[1] - p[1]) - (q[1] - p[1])*(r[0] - p[0])); return o(a, b, c)*o(a, b, d) < 0 && o(c, d, a)*o(c, d, b) < 0; };      // (two leaders cross)
+    const placeAll = ord => { const occ = { [-1]: [], [1]: [] }, lead = { [-1]: [], [1]: [] }, L = [], R = []; let tot = 0; ord.forEach(i => { const it = items[i], c = { ...it, X: pts[i][0], Y: pts[i][1], w: u ? hgt*(it.n > 9 ? 1.3 : 1) : lblW(it.text, fs) }, sy = it.all ? -1 : SYS_OF(it.n);       // (working labels count every part they cross, their own system too)
+      let best = null;
+      // a working label may move its dot to the part's silhouette (a few px inside the outline) where that gives a leader that
+      // crosses less; the dot then sits on the part, at a point it covers on screen
+      const cs = [[c.X, c.Y, 0]];
+      if (it.all){ const own = Q.filter(q => q.n === it.n).flatMap(q => q.h); if (own.length){ const hh = hull(own), m = hh.reduce((a, q) => [a[0] + q[0]/hh.length, a[1] + q[1]/hh.length], [0, 0]);
+        for (const q of hh){ const d = Math.hypot(q[0] - m[0], q[1] - m[1]) || 1, k = Math.min(1, 4*kk/d); cs.push([q[0] + k*(m[0] - q[0]), q[1] + k*(m[1] - q[1]), 0]); }
+        hh.forEach((q, i) => { const r = hh[(i + 1) % hh.length], e = [(q[0] + r[0])/2, (q[1] + r[1])/2], d = Math.hypot(e[0] - m[0], e[1] - m[1]) || 1, k = Math.min(1, 4*kk/d); cs.push([e[0] + k*(m[0] - e[0]), e[1] + k*(m[1] - e[1]), 0]); }); cs.push([m[0], m[1], 0]); cs.forEach(a => { a[2] = .3*Math.hypot(a[0] - c.X, a[1] - c.Y); }); } }
+      for (const [ax, ay, mv] of cs) for (const sd of [-1, 1]){
+        const tp = topAt(sd, xs[0] - 14*kk - c.w, xs[2] + 14*kk + c.w), rows = [...Array(it.all ? 41 : 33).keys()].map(k => ay + (k - (it.all ? 20 : 16))*gap*(it.all ? 1 : .5)); for (const o of occ[sd]) rows.push(o - gap, o + gap);
+        for (const T of rows){
+          if (T < tp || T > bot || occ[sd].some(o => Math.abs(T - o) < gap - 1e-6)) continue;
+          const E = [EXd[sd], T];
+          const cost = run([ax, ay], E, sy) + .1*Math.abs(T - ay) + ((ax < cx) === (sd < 0) ? 0 : 4*kk) + mv + (it.all ? 400*kk*lead[sd].filter(l => xing([ax, ay], E, l[0], l[1])).length : 0);      // (a working label's leader crossing another is swapped away later, so it costs what the swap would)
+          if (!best || cost < best.cost - 1e-6) best = { cost, sd, T, ax, ay }; } }
+      if (!best){ const sd = c.X < cx ? -1 : 1; best = { sd, T: Math.max(c.Y, topAt(sd, xs[0] - 14*kk - c.w, xs[2] + 14*kk + c.w)) }; }       // (no free row: the spacing below sorts it out)
+      if (best.ax != null){ c.X = best.ax; c.Y = best.ay; }
+      c.T = best.T; tot += best.cost || 0; occ[best.sd].push(c.T); lead[best.sd].push([[c.X, c.Y], [EXd[best.sd], c.T]]); (best.sd < 0 ? L : R).push(c); });
+      return { L, R, tot }; };
+    const ord0 = [...items.keys()].sort((i, j) => pts[i][1] - pts[j][1]);
+    let pl = placeAll(ord0); if (items.some(it => it.all)){ const p2 = placeAll([...ord0].reverse()); if (p2.tot < pl.tot - 1e-6) pl = p2; }
+    L.push(...pl.L); R.push(...pl.R);
+    // a side with more labels than rows takes a second column further out (alternate labels, so the leaders pass between the inner ones)
+    const lanes = [], inW = {};
     for (const [col, sd] of [[L, -1], [R, 1]]){
-      col.sort((a, b) => a.Y - b.Y);
-      let y = -1e9; for (const c of col){ c.py = Math.max(c.Y, y + gap, top[sd]); y = c.py; }
+      col.sort((a, b) => a.T - b.T);
+      if (col.length <= Math.floor((bot - topAt(sd, xs[0] - 14*kk - mw, xs[2] + 14*kk + mw))/gap) + 1) lanes.push([col, sd, 0]);
+      else { const a = [], b = []; col.forEach((c, i) => (i % 2 ? b : a).push(c)); lanes.push([a, sd, 0], [b, sd, 1]); }
+    }
+    for (const [col, sd, lane] of lanes){
+      const maxW = Math.max(0, ...col.map(c => c.w)), out = lane ? inW[sd] + 6*kk : 0; if (!lane) inW[sd] = maxW;
+      const edge = sd < 0 ? Math.max(vb.x + 4*kk, xs[0] - 14*kk - maxW - out) : Math.min(vb.x + vb.width - 4*kk - maxW, xs[2] + 14*kk + out), exC = sd < 0 ? edge + maxW : edge;
+      let y = -1e9; for (const c of col){ c.py = Math.max(c.T, y + gap, sd < 0 ? topAt(-1, exC - c.w, exC) : topAt(1, edge, edge + c.w)); y = c.py; }
       const over = col.length ? col[col.length - 1].py - bot : 0;
       if (over > 0){ let lim = bot; for (let i = col.length - 1; i >= 0; i--){ col[i].py = Math.min(col[i].py, lim); lim = col[i].py - gap; } }
-      const maxW = Math.max(0, ...col.map(c => c.w));
+      // leaders must not cross: where two do, the two labels swap places (every swap shortens the leaders, so this ends)
+      const side = (a, b, c2) => { const d = ((b[0] - a[0])*(c2[1] - a[1]) - (b[1] - a[1])*(c2[0] - a[0]))/(Math.hypot(b[0] - a[0], b[1] - a[1]) || 1); return Math.abs(d) < .6*kk ? 0 : Math.sign(d); };       // (a point within a line's width of it counts as on it)
+      for (let pass = 0, swapped = true; swapped && pass < 60; pass++){ swapped = false;
+        for (let i = 0; i < col.length; i++) for (let j = i + 1; j < col.length; j++){
+          const a = col[i], b = col[j], A0 = [a.X, a.Y], A1 = [exC, a.py], B0 = [b.X, b.Y], B1 = [exC, b.py];
+          if (side(A0, A1, B0)*side(A0, A1, B1) <= 0 && side(B0, B1, A0)*side(B0, B1, A1) <= 0){ [a.py, b.py] = [b.py, a.py]; swapped = true; } } }
       for (const c of col){
-        const edge = sd < 0 ? Math.max(vb.x + 4*kk, xs[0] - 14*kk - maxW) : Math.min(vb.x + vb.width - 4*kk - maxW, xs[2] + 14*kk);
         const px = sd < 0 ? edge + maxW - c.w/2 : edge + c.w/2, ex = px - sd*c.w/2;
-        const lit = c.on, colr = SYSC[SYS_OF(c.n)];
+        const lit = c.on, colr = c.col || SYSC[SYS_OF(c.n)];
         s += `<g class="${c.always ? 'tg2' : 'tag'}${lit ? ' on' : ''}" data-n="${c.n}" data-t="${c.text}"><path d="M${f(c.X)} ${f(c.Y)}L${f(ex - sd*5*kk)} ${f(c.py)}L${f(ex)} ${f(c.py)}" fill="none" stroke="${lit ? colr : INK}" style="stroke-width:${f((lit ? 1.6 : 1)*kk)}px"/>`
           + `<circle cx="${f(c.X)}" cy="${f(c.Y)}" r="${f(1.6*kk)}" fill="${colr}" stroke="${INK}" style="stroke-width:${f(.6*kk)}px"/>`
           + `<rect x="${f(px - c.w/2)}" y="${f(c.py - hgt/2)}" width="${f(c.w)}" height="${f(hgt)}" rx="${f(hgt/2)}" fill="${lit ? mix(colr, '#ffffff', .55) : '#fff8e6'}" stroke="${lit ? colr : INK}" style="stroke-width:${f((lit ? 2 : 1.1)*kk)}px"/>`
@@ -229,6 +266,12 @@ function labelLayer(st, items, title, Zp, kk){
   return s;
 }
 
+// how opaque a part is drawn: covers fade in see-through (k = how far it has faded in); a picked sub-part shows its insides too; lattice fades a little
+function partFade(p, st){
+  const k = ease(clamp01(st.xr || 0)), ks = Math.max(k, p.n === st.subSel ? Math.min(1, st.pull[p.n] || 0)*.7 : 0);
+  return p.shell && ks > 0 ? 1 - .8*ks : p.lat && k > 0 ? 1 - .55*k : 1;
+}
+
 /* ================= the scene ================= */
 let INK0 = 0, PARTS_SB = [0, 0, 0, 0];
 function scene(st, m){
@@ -238,68 +281,68 @@ function scene(st, m){
   setFrames(st);
   PARTS = [];
   INK_K = INK0/(st.zs || 1);
-  buildChassis(st); buildCab(st); buildBody(st); buildLifter(st); buildHydraulic(st); buildOther(st); buildPile(st);
-  // framing: fit what is on show (turning does not change the zoom), smoothly
+  buildTower(st); buildSlew(st); buildJib(st); buildCounter(st); buildRopes(st); buildClimb(st); buildSite(st);
+  // framing: fit what is on show (turning the view does not change the zoom), smoothly. The picture is centred on the
+  // middle of the crane at slew 0 and stays there while the upper part turns round the tower.
   const svgEl = document.getElementById('fig'), vb = svgEl.viewBox.baseVal;
-  const bx = bboxOf(PARTS.flatMap(p => [p.box[0], p.box[1]])), cxw = (bx[0][0] + bx[1][0])/2, cyw = (bx[0][1] + bx[1][1])/2;
-  const Rr = Math.hypot((bx[1][0] - bx[0][0])/2, (bx[1][1] - bx[0][1])/2), Hh = bx[1][2] - Math.min(0, bx[0][2]);
+  const ur = p => rotZ(p, -st.slew), bx = bboxOf(PARTS.filter(p => p.n).flatMap(p => [ur(p.box[0]), ur(p.box[1]), ur([p.box[0][0], p.box[1][1], p.box[0][2]]), ur([p.box[1][0], p.box[0][1], p.box[1][2]])]));
+  const cxw = (bx[0][0] + bx[1][0])/2, cyw = (bx[0][1] + bx[1][1])/2, czw = (bx[0][2] + bx[1][2])/2;
+  // the picture size that holds the crane (taken apart or not) in every view: the widest and tallest it gets over a full turn at this pitch
   const pc = Math.cos(PITCH*Math.PI/180), ps = Math.sin(PITCH*Math.PI/180);
-  const Wp = 2*Rr*CAM_K*.97, Hp = CAM_K*(pc*Hh + 2*Rr*ps*.85);
-  const showL = st.sel > 0 || st.busy || st.auto || !document.documentElement.classList.contains('nolabels');
-  const zt = Math.max(.5, Math.min(2.2, Math.min((showL ? .64 : .9)*vb.width/Wp, .84*vb.height/Hp)));
+  let Wm = 0, Hm = 0;
+  for (let k = 0; k < 24; k++){
+    const th = k*Math.PI/12, c = Math.cos(th), sn = Math.sin(th); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const p of PARTS) if (p.n) for (let i = 0; i < 8; i++){
+      const dx = p.box[i & 1][0] - cxw, dy = p.box[(i >> 1) & 1][1] - cyw, dz = p.box[i >> 2][2] - czw, X = dx*sn - dy*c, Y = ps*(dx*c + dy*sn) - pc*dz;
+      if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; }
+    Wm = Math.max(Wm, x1 - x0); Hm = Math.max(Hm, y1 - y0);
+  }
+  const Wp = Wm*CAM_K, Hp = Hm*CAM_K;
+  const showL = st.sel > 0 || st.busy || st.auto || !!st.act || st.over > 0 || !document.documentElement.classList.contains('nolabels');
+  const zt = Math.max(.5, Math.min(2.2, Math.min((showL ? (innerWidth <= 560 ? .82 : .64) : .9)*vb.width/Wp, .85*vb.height/Hp)));
   st.zs = st.zs ? st.zs + (zt - st.zs)*.2 : zt;
   if (Math.abs(st.zs - zt) > .002) st.zoomMoving = true; else { st.zs = zt; st.zoomMoving = false; }
   const zs = st.zs; INK_K = INK0/zs;
-  const Fp = P(cxw, cyw, Hh/2), Ap = [vb.x + vb.width*.5, vb.y + vb.height*.53];
+  const Fp = P(cxw, cyw, czw), Ap = [vb.x + vb.width*.5, vb.y + vb.height*.48];
   const tx = Ap[0] - zs*Fp[0], ty = Ap[1] - zs*Fp[1], Zp = p => [tx + zs*p[0], ty + zs*p[1]];
   // the parts in painter's order; shells fade in see-through
-  const k = ease(st.xr || 0), ord = orderParts(PARTS);
+  const ord = orderParts(PARTS);
   let body = '';
   for (const p of ord){
-    let g = p.hose ? p.svg : `<g data-ps="${p.sys}" data-pn="${p.n}">${p.svg}</g>`;
-    if (k > 0 && p.shell) g = `<g opacity="${f(1 - .8*k)}">${g}</g>`;
-    else if (k > 0 && p.wheel) g = `<g opacity="${f(1 - .45*k)}">${g}</g>`;
+    let g = `<g data-ps="${p.sys}" data-pn="${p.n}">${p.svg}</g>`;
+    const fd = partFade(p, st); if (fd < 1) g = `<g opacity="${f(fd)}">${g}</g>`;
     body += g;
   }
-  // shadows: what stands on the ground casts full, lifted systems a faint one
-  let shN = '', shF = '';
+  // shadows: one hull per piece of the crane, so the ground shadow keeps the crane's shape (a hull of the whole mast and jib would be one
+  // solid wedge): each mast section, the cross base, the jib in four lengths, counter-jib, counterweight, slewing unit, tower top, cab, hook
+  // block, climbing frame. Ropes and tie bars cast none. What stands on the ground casts full, lifted systems a faint one
+  use('jib', 7); const j0 = wpt([0, 0, 90]), jd = sub(wpt([105, 0, 90]), j0), jl = dot(jd, jd);
+  const jc = p => { const c = [0, 1, 2].map(k => (p.box[0][k] + p.box[1][k])/2); return Math.min(3, Math.max(0, Math.floor(4*dot(sub(c, j0), jd)/jl))); };
   const groups = {};
-  for (const p of PARTS){ const key = p.sys === 1 && p.n === 1 ? 'cab' : p.sys === 4 ? 'h' : p.sys === 5 ? 'o' : p.sys === 3 ? 'l' : p.sys === 2 ? 'b' : 'c'; (groups[key] = groups[key] || []).push(...p.pts); }
-  const lifted = { cab: st.E[1], b: st.E[2], l: Math.max(st.E[2], st.E[3]), h: st.E[4], o: st.E[5], c: 0 };
-  const ground = [];
-  for (const [kk, pts] of Object.entries(groups)){ if (lifted[kk] > .15) shF += castShadow(pts, 0); else ground.push(...pts); }
-  if (ground.length) shN = castShadow(ground, 0);
+  for (const p of PARTS){
+    if (p.n === 12 || p.n === 24 || p.n === 14 || p.n === 23 || p.hose) continue;
+    const k = p.fr === 'jib' || p.fr === 'trol' ? 'j' + jc(p) : p.fr === 'lo' || p.fr === 'su' ? 'su' : p.fr;
+    (groups[k] = groups[k] || { sys: p.sys, pts: [] }).pts.push(...p.pts); }
+  let shN = '', shF = '';
+  for (const g of Object.values(groups)){ if (st.E[g.sys] > .15) shF += castShadow(g.pts, 0); else shN += castShadow(g.pts, 0); }
   INK_K = INK0;
   PARTS_SB = (() => { const b = PARTS.map(p => p.sb); return [Math.min(...b.map(q => q[0])), Math.min(...b.map(q => q[1])), Math.max(...b.map(q => q[2])), Math.max(...b.map(q => q[3]))].map((v, i) => i % 2 ? ty + zs*v : tx + zs*v); })();
   INK_K = INK0/zs;
   let out = `<g transform="translate(${f(tx)} ${f(ty)}) scale(${zs.toFixed(4)})"><g opacity=".9">${shN}</g><g opacity=".13">${shF}</g>${body}</g>`;
-  // labels: a separated system shows its own; while working the busy parts; the Labels switch shows all 25
+  // labels: a separated system shows its own; while working the busy parts; the Labels switch shows all of them
   INK_K = INK0;
   const act = activeParts(st), items = [];
   let title = null;
   if (st.sel > 0){
-    for (let n = 1; n <= 25; n++) if (SYS_OF(n) === st.sel) items.push({ n, text: PNAME[n], w: lblPoint(n), on: st.subSel === n || act.has(n), always: true });
+    for (let n = 1; n <= NPART; n++) if (SYS_OF(n) === st.sel) items.push({ n, text: PNAME[n], w: lblPoint(n), on: st.subSel === n || act.has(n), always: true });
     const ws = items.map(it => Zp(P(...it.w)));
-    title = { k: st.sel, text: SYSN[st.sel], X: ws.reduce((a, q) => a + q[0], 0)/ws.length, Y: Math.min(...ws.map(q => q[1])) - 34*INK0 };
-  } else if (st.busy || st.auto){
-    for (const n of [14, 15, 16, 24, 9, 10, 12, 18, 20, 21]) items.push({ n, text: PNAME[n], w: lblPoint(n), on: act.has(n), always: true });
+    const sb = PARTS.filter(p => p.sys === st.sel).map(p => [Zp([p.sb[0], p.sb[1]]), Zp([p.sb[2], p.sb[3]])]);       // the name sits above the whole system, not just above its label anchors
+    title = { k: st.sel, text: SYSN[st.sel], X: (Math.min(...sb.map(b => b[0][0])) + Math.max(...sb.map(b => b[1][0])))/2, Y: Math.min(ws.reduce((a, q) => Math.min(a, q[1]), 1e9) - 34*INK0, Math.min(...sb.map(b => b[0][1])) - 22*INK0) };
+  } else if (st.busy || st.auto || st.act || st.over > 0){
+    for (const n of act) items.push({ n, text: PNAME[n], w: lblPoint(n), on: true, always: true, all: true, col: n === 19 ? (st.over > 0 ? '#d93a2e' : '#e8a317') : null });
   } else if (!document.documentElement.classList.contains('nolabels')) {
-    for (let n = 1; n <= 25; n++) items.push({ n, text: PNAME[n], w: lblPoint(n), on: false });
+    for (let n = 1; n <= NPART; n++) items.push({ n, text: PNAME[n], w: lblPoint(n), on: false });
   }
   if (items.length || title) out += labelLayer(st, items, title, Zp, INK0);
   return out;
-}
-// refuse pushed out on the ground behind the open tailgate (a mound), and the stream falling into it
-function buildPile(st){
-  if (st.pile <= .01) return;
-  useWorld(8);
-  const n = Math.round(34*Math.min(1, st.pile)), R0 = 14;
-  for (let i = 0; i < n; i++){ const a = rnd(i + 300)*2*Math.PI, rr = R0*Math.sqrt(rnd(i + 340)), h = 1.2 + 1.4*rnd(i + 380);
-    const x = 24 + rr*Math.cos(a)*.8, y = YC + rr*Math.sin(a)*1.3, z = Math.max(0, (1 - rr/R0)*7*Math.min(1, st.pile));
-    gB(x - h*.6, y - h*.7, z, x + h*.6, y + h*.7, z + h, matOf(GAR[i % GAR.length]), .3, { ink: .5 }); }
-  if (st.act === 'eject' && st.gate > .9 && st.load > .02){
-    for (let i = 0; i < 7; i++){ const t = (st.clock*1.6 + i/7) % 1, M = FT.body([41, YC + (rnd(i + 9) - .5)*30, 26]);
-      const p = [lerp(M[0], 30, t), M[1], lerp(M[2], 4, t*t)], h = .9 + .7*rnd(i);
-      gB(p[0] - h, p[1] - h, p[2] - h, p[0] + h, p[1] + h, p[2] + h, matOf(GAR[(i + 3) % GAR.length]), .3, { ink: .5 }); }
-  }
 }

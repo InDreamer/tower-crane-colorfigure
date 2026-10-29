@@ -67,7 +67,7 @@ def local_only(route):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--url", default=(ROOT / "truck.html").as_uri())
+    parser.add_argument("--url", default=(ROOT / "crane.html").as_uri())
     parser.add_argument("--output", type=Path, default=ROOT / "shots/performance.json")
     args = parser.parse_args()
     result = {

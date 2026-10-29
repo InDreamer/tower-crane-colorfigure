@@ -1,8 +1,8 @@
 
 /* ================= behaviour: taking apart, picking parts, the working cycle ================= */
 let ui;
-const ejOf = L => EJ0 + L*(EJ1 - EJ0);
-const ORDER = [1, 2, 3, 4, 5];
+const ORDER = [5, 3, 4, 2, 6, 1];                      // the order they come apart: the ropes and hook first (so they never stretch), then the jib and counter-jib, the slewing unit, the climbing frame, last the mast; they go back in reverse
+const ALL_OUT = () => [0, ...SYS_IDS.map(() => 1)];
 const assembled = st => st.p.every(v => v < .001) && st.tgt.every(v => v === 0) && st.subSel === 0 && Object.values(st.pull).every(v => v < .001);
 function stopAuto(st){ st.auto = false; st.autoWait = 0; st.pending = null; }
 function setTargets(st, want, stagger){            // want[k] 0/1; stagger: separate one after another
@@ -11,110 +11,49 @@ function setTargets(st, want, stagger){            // want[k] 0/1; stagger: sepa
   closing.reverse().forEach((k, i) => { st.tgt[k] = 0; st.dl[k] = stagger ? i*.28 : 0; });
   run();
 }
-function explodeAll(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, [0, 1, 1, 1, 1, 1], true); }
-function collapseAll(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, [0, 0, 0, 0, 0, 0], true); }
+function explodeAll(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, ALL_OUT(), true); }
+function collapseAll(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, zeros(), true); }
 function pickSystem(k){
   const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完');
-  stopAuto(st); st.sel = k; st.subSel = 0; const w = [0, 0, 0, 0, 0, 0]; w[k] = 1; setTargets(st, w, false);
+  stopAuto(st); st.sel = k; st.subSel = 0; const w = zeros(); w[k] = 1; setTargets(st, w, false);
 }
-function putBack(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, [0, 0, 0, 0, 0, 0], false); }
+function putBack(){ const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完'); stopAuto(st); st.sel = -1; st.subSel = 0; setTargets(st, zeros(), false); }
 function pickPart(k, n){
   const st = ui.st; if (st.busy) return ui.flash('正在工作，等这一步做完');
   if (st.sel !== k) return pickSystem(k);
   stopAuto(st); st.subSel = st.subSel === n ? 0 : n; run();
 }
 
-/* ----- the working cycle: each step is a list of timed moves; act = the cylinder pair the valve is feeding ----- */
-const STEPS = {
-  hook: { name: '挂桶', segs: [
-    { d: .9, f: (st, t) => { st.hook = Math.min(.999, sstep(t)); } },
-    { d: .5, f: (st, t) => { st.hook = 1; st.clamp = sstep(t); } } ] },
-  lift: { name: '提升', segs: [ { d: 1.1, act: 'lift', f: (st, t) => { st.lift = sstep(t); } } ] },
-  tip: { name: '翻倒', segs: [
-    { d: 1.5, act: 'tip', f: (st, t) => { st.tip = sstep(t); st.lidA = sstep((t - .45)/.45); } },
-    { d: 1.3, f: (st, t) => { st.pour = t; st.binFull = 1 - t; st.hop = Math.max(st.hop, t); } },
-    { d: 1.3, act: 'tip', f: (st, t) => { st.pour = 1; st.tip = 1 - sstep(t); st.lidA = 1 - sstep(t/.6); } },
-    { d: .8, act: 'lift', f: (st, t) => { st.pour = 0; st.lift = 1 - sstep(t); } },
-    { d: .4, f: (st, t) => { st.clamp = 1 - t; } },
-    { d: .8, f: (st, t) => { st.hook = Math.min(.999, 1 - sstep(t)); if (t >= 1){ st.hook = 0; st.binFull = 1; } } } ] },
-  pack: { name: '压缩', segs: [
-    { d: .8, act: 'blade', f: (st, t) => { st.blade = sstep(t); } },
-    { d: 1, act: 'slide', f: (st, t) => { st.slide = sstep(t); } },
-    { d: 1.1, act: 'blade', f: (st, t) => { st.blade = 1 - sstep(t); st.pk = .5*sstep(t); } },
-    { d: 1.3, act: 'slide', f: (st, t) => { st.slide = 1 - sstep(t); st.pk = .5 + .5*sstep(t);
-        st.load = Math.min(1, st.L0 + binLoadStep(st)*sstep(t)); st.ej = ejOf(st.load);
-        if (t >= 1){ st.hop = 0; st.pk = 0; st.packed = true; } } } ] },
-  press: { name: '推实', segs: [ { d: 1.2, act: 'eject', f: (st, t) => { st.ej = ejOf(st.load) - 3.2*Math.sin(Math.PI*t); st.dense = Math.min(1, st.d0 + .35*sstep(t)); if (t >= 1) st.packed = false; } } ] },
-  dump: { name: '卸料', segs: [
-    { d: 1.6, act: 'gate', f: (st, t) => { st.gate = sstep(t); } },
-    { d: 2.6, act: 'eject', f: (st, t) => { const e = sstep(t); st.ej = lerp(st.ejS, 43.4, e); st.load = st.L0*(1 - e); st.pile = Math.max(st.pile, e); } },
-    { d: 1.4, act: 'eject', f: (st, t) => { st.load = 0; st.ej = lerp(43.4, EJ0, sstep(t)); } },
-    { d: 1.5, act: 'gate', f: (st, t) => { st.gate = 1 - sstep(t); if (t >= 1) st.dense = 0; } } ] },
-};
-const STEP_ORDER = ['hook', 'lift', 'tip', 'pack', 'press', 'dump'];
-// why a step can't run yet (the hint names the step that has to come first), or '' if it can
-function whyNot(st, id){
-  const pct = Math.round(st.load*100);
-  if (!Object.hasOwn(STEPS, id)) return '未知步骤：请选择有效的工作步骤';
-  if (st.gate > 0 && ['hook', 'lift', 'tip', 'pack', 'press'].includes(id)) return '先关闭后门，再继续工作';
-  if (id === 'hook') return st.hook >= 1 ? '桶已挂好：下一步提升' : st.hop > .05 ? '料斗有垃圾：先压缩' : st.packed ? '先推实，再挂桶' : st.load >= .999 ? '车厢已满：先卸料' : '';
-  if (id === 'lift') return st.hook < 1 ? '先挂桶，再提升' : st.lift >= 1 ? '已经提升：下一步翻倒' : '';
-  if (id === 'tip') return st.hook < 1 ? '先挂桶、提升，再翻倒' : st.lift < 1 ? '先提升，再翻倒' : '';
-  if (id === 'pack') return st.load >= .999 ? '车厢已满：先卸料' : st.hook >= 1 ? '先把垃圾桶倒完放下' : st.hop < .05 ? '料斗是空的：先挂桶、提升、翻倒' : '';
-  if (id === 'press') return st.hop > .05 ? '先压缩，再推实' : !st.packed ? '先压缩，再推实' : '';
-  if (id === 'dump') return st.load < .999 ? `车厢未满（${pct}%）：继续装桶、压缩` : st.packed ? '先推实，再卸料' : [st.hook, st.lift, st.tip, st.clamp].some(v => v > .001) ? '先放下垃圾桶并让提升机构归位，再卸料' : '';
-  return '';
-}
+/* ----- the working cycle: the steps are in g_work.js; here they are started (doStep), run (advanceStep) and chained (the 工作 and 顶升 buttons) ----- */
 function doStep(id, quiet){
   const st = ui.st;
   if (st.busy){ if (!quiet) ui.flash('正在动作，等这一步做完'); return false; }
-  const w = whyNot(st, id); if (w){ ui.flash(w, 2000); return false; }
-  if (!assembled(st)){ st.sel = -1; st.subSel = 0; st.pending = id; setTargets(st, [0, 0, 0, 0, 0, 0], true); ui.flash('先合拢，再工作'); return false; }
-  st.busy = true; st.cur = { id, i: 0, t: 0 }; st.L0 = st.load; st.d0 = st.dense; st.ejS = st.ej;
+  const w = whyNot(st, id); if (w){ if (/太重/.test(w)){ st.over = 2.5; run(); } ui.flash(w, 2000); return false; }
+  if (!assembled(st)){ st.sel = -1; st.subSel = 0; st.pending = id; setTargets(st, zeros(), true); ui.flash('先合拢，再工作'); return false; }
+  const msg = beginStep(st, id); applySeg(st, STEPS[id].segs[0]); if (msg){ st.over = 2.5; ui.flash(msg, 2400); }
+  st.busy = true; st.cur = { id, i: 0, t: 0 };
   run(); return true;
 }
-function nextAuto(st){
-  if (st.hook >= 1 && st.lift < 1) return 'lift';
-  if (st.hook >= 1 && st.lift >= 1) return 'tip';
-  if (st.hop > .05) return 'pack';
-  if (st.packed) return 'press';
-  if (st.load >= .999) return 'dump';
-  return 'hook';
-}
 function startAutoStep(st){ if (!doStep(nextAuto(st), true) && !st.pending) stopAuto(st); }
-function toggleAuto(){
+function toggleAuto(mode){            // mode: 'work' (a lift) or 'climb' (one more mast section)
   const st = ui.st;
   if (st.auto){ stopAuto(st); return ui.flash('做完这一步后停下'); }
-  st.auto = true; st.autoWait = 0; st.autoN = 0;
+  if (st.busy) return ui.flash('正在动作，等这一步做完');
+  st.autoMode = mode; st.auto = true; st.autoWait = 0; st.autoN = 0;
   if (!st.xrT) setXr(1);
   if (!st.busy) startAutoStep(st);
 }
 function setXr(v){ const st = ui.st; st.xrT = v; const b = document.getElementById('xrb'); if (b) b.setAttribute('aria-pressed', !!v); run(); }
 
-/* ----- 涂装 and 垃圾桶: repaint the truck; swap the bin (only while it stands free and nothing is running) ----- */
+/* ----- 涂装: repaint the crane ----- */
 function setSkin(id, remember){
-  applySkin(id); ui.st.skin = SKIN_ID; ui.st.paint = paintOf(SKIN_ID);          // the picker starts from what is on the truck
+  applySkin(id); ui.st.skin = SKIN_ID; ui.st.paint = paintOf(SKIN_ID);          // the picker starts from what is on the crane
   if (remember) paintStore(ui.st);
   if (remember) ui.flash(`涂装：${skinOf(SKIN_ID).name}`);
   ui.invalidate();
 }
-function binBusy(st){ return st.hook > 0 || st.busy || !!st.cur || !!st.pending; }
-// patch: any of binStyle / binSize / binType. A size the style does not make becomes the nearest one it does. The picture of the swap
-// (st.swapT 1 -> 0, see makeFrames) is only an offset: the state holds the new bin at once.
-function setBin(patch){
-  const st = ui.st;
-  if (binBusy(st)) return ui.flash('先把垃圾桶倒完放下，再换桶', 2000);
-  const old = { binStyle: binStyleOf(st.binStyle).id, binSize: binSpec(st).id, binType: binTypeOf(st.binType).id, binColor: st.binColor || null };
-  Object.assign(st, patch);
-  st.binStyle = binStyleOf(st.binStyle).id; st.binSize = binSizeFor(st.binStyle, st.binSize); st.binType = binTypeOf(st.binType).id;
-  st.binFull = 1; st.lidA = 0; st.pour = 0;                       // the new bin stands full, lid shut
-  binStore(st);
-  if (st.binStyle !== old.binStyle || st.binSize !== old.binSize || st.binType !== old.binType){ st.swapOld = old; st.swapT = 1; run(); }
-  ui.flash(`垃圾桶：${binLabel(st)}`); ui.invalidate();
-}
-const binLabel = st => `${binStyleOf(st.binStyle).name} ${binSpec(st).name} ${binTypeOf(st.binType).name}`;
 const skinChoices = st => [{ heading: '预设' }, ...SKINS.map(k => ({ label: k.name, swatch: k.dot, current: st.skin === k.id, onClick: () => setSkin(k.id, true) }))];
-const skinDot = st => st.skin === 'custom' ? st.paint.body : skinOf(st.skin).dot;
+const skinDot = st => st.skin === 'custom' ? st.paint.tower : skinOf(st.skin).dot;
 // paint one zone of the custom paint (live while dragging: no storage write here, the picker commits on release)
 function setZone(z, hex){
   const st = ui.st; if (st.skin === 'custom' && st.paint[z] === hex) return;
@@ -122,7 +61,7 @@ function setZone(z, hex){
 }
 /* the custom paint picker inside the 涂装 dropdown: zone tabs, a saturation/value square, a hue bar, a HEX box and a preview.
    Built once per opening; dragging only moves the knobs and recolours a few elements (the dropdown is not redrawn). */
-const ZONE_TABS = [['body', '箱体'], ['cab', '驾驶室'], ['lift', '上料机构']];
+const ZONE_TABS = [['tower', '塔身与臂架'], ['cab', '驾驶室'], ['motor', '机构电机']];
 const SKP_CSS = `.skp{width:276px;max-width:100%;display:flex;flex-direction:column;gap:7px;user-select:none;-webkit-user-select:none}
   .skp .tabs{display:flex;gap:5px} .skt{flex:1 1 0;min-width:0;white-space:nowrap;font:inherit;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:4px 3px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
   .skt .dot{margin-right:4px} .skt[aria-pressed=true]{background:var(--ink);color:var(--paper)} .skt[aria-pressed=true] .dot{border-color:var(--paper)}
@@ -178,45 +117,50 @@ function colorPicker(o){
   show(true);
   return root;
 }
-// the truck paint: one picker, three zone tabs
-function skinPanel(st, ui){
-  // the first edit turns the truck custom: the preset chip stops being marked as the current one (the chips are otherwise left alone)
+// the crane paint: one picker, three zone tabs
+function skinPanel(st, ui, close){
+  // the first edit turns the crane custom: the preset chip stops being marked as the current one (the chips are otherwise left alone)
   const root = colorPicker({ zones: ZONE_TABS, get: z => st.paint[z], commit: () => paintStore(st),
     set: (z, hex) => { const was = st.skin; setZone(z, hex);
-      if (was !== 'custom' && root.parentNode) for (const b of root.parentNode.querySelectorAll('.chip.current')){ b.classList.remove('current'); b.removeAttribute('aria-pressed'); } } });
+      if (was !== 'custom' && root.closest('.chips')) for (const b of root.closest('.chips').querySelectorAll('.chip.current')){ b.classList.remove('current'); b.removeAttribute('aria-pressed');
+        b.onclick = ev => { ev.stopPropagation(); close(); const k = SKINS.find(q => q.name === b.textContent.trim()); if (k){ setSkin(k.id, true); ui.invalidate(); } }; } } });       // (the chip no longer is the current one: it must work again)
+  const box = document.createElement('div'), h = document.createElement('div'); h.className = 'chiph'; h.textContent = '自定义'; box.append(h, root);
+  return box;
+}
+
+/* ----- 吊物: swap the load (style, size, rigging; the colour any time) ----- */
+function setLoad(patch){
+  const st = ui.st, w = ldWhyNot(st); if (w){ ui.flash(w); return false; }
+  const from = ldNorm(st.ld), next = ldNorm({ ...from, ...patch });
+  if (JSON.stringify(from) === JSON.stringify(next)) return true;
+  st.ld = applyLoad(next); st.swap = { from, t: 0 }; ldStore(st.ld); run(); ui.invalidate(); return true;       // (the state changes at once; the slide is only the picture)
+}
+function setLoadColor(hex, commit){
+  const st = ui.st; if (st.ld.color === hex) return;
+  st.ld = applyLoad({ ...st.ld, color: hex }); if (commit) ldStore(st.ld); ui.invalidate();
+}
+const ldChoices = st => { const sty = ldStyle(st.ld.style); return [
+  { heading: '款式' }, ...LD_STYLES.map(k => ({ label: k.name, swatch: k.col, current: k.id === sty.id, onClick: () => setLoad({ style: k.id, size: ldNearest(k, LOAD.t) }) })),
+  { heading: '尺寸' }, ...LD_SIZES.filter(([id]) => sty.sizes[id]).map(([id, nm]) => ({ label: `${nm} ${sty.sizes[id].t.toFixed(1)}t`, current: st.ld.size === id, onClick: () => setLoad({ size: id }) })),
+  { heading: '吊索' }, ...LD_RIGS.map(([id, nm]) => ({ label: nm, current: st.ld.rig === id, disabled: !sty.rigs.includes(id), why: sty.why[id], onClick: () => setLoad({ rig: id }) })),
+  { heading: '颜色' }, { label: '跟随默认', swatch: sty.col, current: !st.ld.color, onClick: () => setLoadColor(null, true) }]; };
+function ldPanel(st, ui, close){
+  const root = colorPicker({ zones: [['load', '吊物颜色']], get: () => st.ld.color || ldStyle(st.ld.style).col, commit: () => ldStore(st.ld),
+    set: (z, hex) => { const was = st.ld.color; setLoadColor(hex, false);
+      if (!was && root.closest('.chips')) for (const b of root.closest('.chips').querySelectorAll('.chip.current')) if (b.textContent === '跟随默认'){ b.classList.remove('current'); b.removeAttribute('aria-pressed');
+        b.onclick = ev => { ev.stopPropagation(); close(); setLoadColor(null, true); ui.invalidate(); }; } } });
   return root;
 }
-// the bin's colour: follow the waste type, or any custom colour (cosmetic, so it works at any time, hooked or running)
-const binColorNow = st => hexOf(st.binColor) || binTypeOf(st.binType).mat.m;
-function setBinColor(hex, remember){ const st = ui.st; st.binColor = hex ? hexOf(hex) : null; if (remember) binStore(st); ui.invalidate(); }
-function binPanel(st, ui){
-  const root = colorPicker({ zones: [['bin', '']], get: () => binColorNow(st), commit: () => binStore(st), set: (z, hex) => { setBinColor(hex, false); modes(); } });
-  const row = document.createElement('div'); row.className = 'tabs'; root.insertBefore(row, root.firstChild);
-  const mkb = (txt, f) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'skt'; b.textContent = txt; b.onclick = f; row.appendChild(b); return b; };
-  const follow = mkb('跟随分类', () => { setBinColor(null, true); root.sync(); modes(); }),
-    custom = mkb('自定义', () => { setBinColor(binColorNow(st), true); root.sync(); modes(); });
-  function modes(){ follow.setAttribute('aria-pressed', !st.binColor); custom.setAttribute('aria-pressed', !!st.binColor); }
-  modes();
-  return root;
-}
-const binChoices = st => { const sty = binStyleOf(st.binStyle), sp = binSpec(st);
-  return [{ heading: '款式' },
-    ...BIN_STYLES.map(s => ({ label: s.name, current: sty.id === s.id, onClick: () => setBin({ binStyle: s.id }) })),
-    { heading: '容量' },
-    ...sty.specs.map(b => ({ label: b.name, current: sp.id === b.id, onClick: () => setBin({ binSize: b.id }) })),
-    { heading: '分类' },
-    ...BIN_TYPES.map(t => ({ label: t.name, swatch: t.dot, current: binTypeOf(st.binType).id === t.id, onClick: () => setBin({ binType: t.id }) })),
-    { heading: '颜色' } ]; };
 
 /* ----- one clock for everything that moves ----- */
 let loopOn = false;
 function advanceStep(st, dt){
   while (st.cur && dt > 1e-12){
-    const cur = st.cur, seg = STEPS[cur.id].segs[cur.i], remaining = (1 - cur.t)*seg.d, elapsed = Math.min(dt, remaining);
-    dt -= elapsed; cur.t = remaining - elapsed < 1e-12 ? 1 : cur.t + elapsed/seg.d;
-    st.act = seg.act || null; st.pump = seg.act ? 1 : 0; seg.f(st, cur.t);
+    const cur = st.cur, S = STEPS[cur.id], seg = S.segs[cur.i], d = typeof seg.d === 'function' ? seg.d(st) : seg.d, remaining = (1 - cur.t)*d, elapsed = Math.min(dt, remaining);
+    dt -= elapsed; cur.t = remaining - elapsed < 1e-12 ? 1 : cur.t + elapsed/d;
+    applySeg(st, seg); seg.f(st, cur.t);
     if (cur.t >= 1){ cur.i++; cur.t = 0;
-      if (cur.i >= STEPS[cur.id].segs.length){ const id = cur.id; st.cur = null; st.busy = false; st.act = null; st.pump = 0; return id; }
+      if (cur.i >= S.segs.length){ const id = cur.id; st.cur = null; st.busy = false; endStep(st, id); return id; }
     }
   }
   return null;
@@ -224,71 +168,82 @@ function advanceStep(st, dt){
 function run(){
   if (loopOn) return; loopOn = true;
   ui.animate(dt => { const st = ui.st; let busy = false;
-    st.clock += dt;
+    st.clock += dt; if (st.over > 0){ st.over = Math.max(0, st.over - dt); busy = true; }
+    if (st.swap){ st.swap.t += dt/SWAP_SECS; busy = true; if (st.swap.t >= 1) st.swap = null; }
     for (const k of ORDER){
       if (st.dl[k] > 0){ st.dl[k] -= dt; busy = true; continue; }
       const d = st.tgt[k] - st.p[k]; if (Math.abs(d) < 1e-3){ st.p[k] = st.tgt[k]; continue; }
       st.p[k] += Math.sign(d)*Math.min(Math.abs(d), dt/.9); busy = true; }
-    for (let n = 1; n <= 25; n++){ const want = st.subSel === n ? 1 : 0, cur = st.pull[n] || 0;
+    for (let n = 1; n <= NPART; n++){ const want = st.subSel === n ? 1 : 0, cur = st.pull[n] || 0;
       if (Math.abs(want - cur) > 1e-3){ st.pull[n] = cur + Math.sign(want - cur)*Math.min(Math.abs(want - cur), dt/.6); busy = true; } else st.pull[n] = want; }
     const g = Math.sign((st.xrT || 0) - (st.xr || 0)); if (g){ st.xr = clamp01(st.xr + g*dt/.7); busy = true; }
     if (st.pending && assembled(st)){ const id = st.pending; st.pending = null; if (!doStep(id, true) && st.auto && !st.pending) stopAuto(st); }
     if (st.cur){ busy = true; const finished = advanceStep(st, dt);
-      if (finished && st.auto){ if (finished === 'dump') stopAuto(st); else st.autoWait = .25; }
+      if (finished && st.auto){ if (finished === lastStep(st)) stopAuto(st); else st.autoWait = .8; }
     } else if (st.auto && !st.pending){
       st.autoWait = Math.max(0, (st.autoWait || 0) - dt);
       if (!st.autoWait) startAutoStep(st);
     }
-    if (!st.cur && st.pile > 0 && st.gate === 0 && st.load === 0){ st.pile = Math.max(0, st.pile - dt/2.2); busy = true; }
-    if (st.swapT > 0){ st.swapT = Math.max(0, st.swapT - dt/.55); busy = true; }
-    if (st.zoomMoving) busy = true;
+    if (st.zoomMoving || st.over > 0 || st.swap) busy = true;
     if (!busy && !st.auto) loopOn = false;
     return busy || !!st.auto; });
 }
 
-// paint and bin from the URL: ?skin=<id>, ?body= ?cab= ?lift= (RRGGBB: a custom paint on top of ?skin), ?binStyle=wheelie|cart4|drum|dome|pedal, ?binColor=RRGGBB,
-// ?bin=<litres> (one of that style's sizes, else its default; without ?binStyle the first style that makes that size), ?binType=kitchen|other|recycle|hazard (anything else: the default); without ?skin / colours the remembered paint (if the browser kept one) is used
+// paint from the URL: ?skin=<id>, ?tower= ?cab= ?motor= (RRGGBB: a custom paint on top of ?skin); without ?skin / colours the remembered paint (if the browser kept one) is used
 function lookParams(st, q){
   const url = paintParams(q), kept = !url && !q.has('skin') ? paintStored() : null;
   if (url || (kept && kept.skin === 'custom')){ st.paint = url || kept.paint; st.skin = applyPaint(st.paint); }
   else { st.skin = applySkin(q.has('skin') ? q.get('skin') : kept && kept.skin); st.paint = paintOf(st.skin); }
-  const bkept = binStored() || {}, sized = q.has('bin') || q.has('binStyle');       // the URL decides style and size when it names either; else what the browser kept
-  const bn = /^\d+$/.test(q.get('bin') || '') ? Number(q.get('bin')) : NaN, bsy = BIN_STYLES.find(s => s.id === q.get('binStyle'));
-  const sty = sized ? bsy || binStyleForSize(bn) || binStyleOf(BIN_STYLE_DEFAULT) : binStyleOf(bkept.binStyle);     // an old ?bin=660 link names no style: the style that makes that size
-  st.binStyle = sty.id; st.binSize = sized ? (sty.sizes.includes(bn) ? bn : sty.dflt) : bkept.binSize || sty.dflt;
-  st.binType = binTypeOf(q.has('binType') ? q.get('binType') : bkept.binType).id;
-  st.binColor = urlHex(q.get('binColor')) || bkept.binColor || null;             // ?binColor=RRGGBB (an invalid one is ignored)
+  st.ld = applyLoad(ldParams(q) || ldStored() || LD_DEFAULT);       // the URL wins over what the browser kept
+}
+// the working state from the URL: ?slew=<degrees> ?trolley=<x> ?hookZ=<z> ?nsec=4..6 ?climb=0..1 ?at=pad|roof ?hooked=0|1 ?loadT=<0.2..8 t> ?step=<id>&t=<0..1> (a bad value keeps the default)
+function stateParams(st, q){
+  const num = k => { const v = q.get(k); return q.has(k) && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN; };
+  if (Number.isInteger(num('nsec')) && num('nsec') >= NSEC_MIN && num('nsec') <= NSEC_MAX) st.nsec = num('nsec');
+  if (Number.isFinite(num('slew'))) st.slew = num('slew')*Math.PI/180;
+  if (Number.isFinite(num('trolley'))) st.trolley = Math.max(TROL_MIN, Math.min(TROL_MAX, num('trolley')));
+  if (Number.isFinite(num('hookZ'))) st.hookZ = Math.max(hookMin(st), Math.min(HOOK_MAX, num('hookZ')));
+  if (Number.isFinite(num('climb'))) st.climb = clamp01(num('climb'));
+  if (['pad', 'roof'].includes(q.get('at'))) st.at = q.get('at');
+  if (Number.isFinite(num('loadT')) && num('loadT') >= .2 && num('loadT') <= 8) st.loadT = num('loadT');
+  if (['0', '1'].includes(q.get('hooked'))){ st.hooked = q.get('hooked') === '1'; st.sl = +st.hooked; }
+  if (Object.hasOwn(STEPS, q.get('step')) && !(q.has('t') && !(num('t') >= 0 && num('t') <= 1))) scrub(st, q.get('step'), q.has('t') ? num('t') : .5);
 }
 
+const stepItem = (st, id, i) => ({ label: `${i + 1} ${STEPS[id].name}`, onClick: () => { stopAuto(st); doStep(id); } });
+// back to four sections at once (only when nothing is moving and nothing hangs on the hook)
+function restore4(){
+  const st = ui.st; if (st.busy) return ui.flash('正在动作，等这一步做完'); stopAuto(st);
+  if (st.hooked) return ui.flash('先放下吊物，再恢复');
+  if (st.nsec === NSEC_MIN && !climbing(st)) return ui.flash('现在就是 4 节');
+  st.nsec = NSEC_MIN; st.climb = st.ext = 0; st.sx = null; st.bolt = 0; st.hookZ = Math.max(hookMin(st), Math.min(HOOK_MAX, st.hookZ)); ui.flash('已恢复 4 节'); run(); ui.invalidate();
+}
 ui = mountFigure({
-  fig: '08', turn: 'full', title: '压缩式垃圾车 · 结构拆解图', credit: false,
-  size: [196, 62, 72], center: [86, 25], palette: 'mint',
-  state: { p: [0,0,0,0,0,0], tgt: [0,0,0,0,0,0], dl: [0,0,0,0,0,0], E: [0,0,0,0,0,0], sel: -1, subSel: 0, pull: {},
-    hook: 0, clamp: 0, lift: 0, tip: 0, lidA: 0, binFull: 1, pour: 0, hop: 0, pk: 0, slide: 0, blade: 0,
-    load: .6, ej: ejOf(.6), dense: 0, skin: SKIN_DEFAULT, paint: paintOf(SKIN_DEFAULT), binStyle: BIN_STYLE_DEFAULT, binSize: BIN_SIZE_DEFAULT, binType: BIN_TYPE_DEFAULT, binColor: null, swapT: 0, swapOld: null, packed: false, gate: 0, pile: 0, pump: 0, act: null, clock: 0, busy: false, auto: false, autoWait: 0, cur: null },
+  fig: '09', turn: 'full', title: '塔式起重机 · 结构拆解图', credit: false,
+  size: [162, 46, 128], center: [80, 23], palette: 'mustard',
+  state: { p: zeros(), tgt: zeros(), dl: zeros(), E: zeros(), sel: -1, subSel: 0, pull: {},
+    slew: 0, slew0: 0, trolley: TROL_REST, nsec: NSEC_MIN, climb: 0, ...workState(),
+    skin: SKIN_DEFAULT, paint: paintOf(SKIN_DEFAULT), ld: ldNorm(LD_DEFAULT), swap: null, pump: 0, act: null, clock: 0, busy: false, auto: false, autoWait: 0, cur: null },
   scene,
   buttons: [
     { label: '拆解', onClick: () => explodeAll() },
     { label: '合拢', onClick: () => collapseAll() },
-    { label: '工作', onClick: () => toggleAuto() },
-    { label: '分步', choices: st => STEP_ORDER.map((id, i) => ({ label: `${i + 1} ${STEPS[id].name}`, onClick: () => { stopAuto(st); doStep(id); } })) },
+    { label: '工作', onClick: () => toggleAuto('work') },
+    { label: '顶升', onClick: () => toggleAuto('climb') },
+    { label: '分步', choices: st => [{ heading: '吊装' }, ...WORK_ORDER.map((id, i) => stepItem(st, id, i)), { heading: '顶升' }, ...CLIMB_ORDER.map((id, i) => stepItem(st, id, i)),
+      { label: '恢复 4 节', onClick: () => restore4() }] },
+    { label: '吊物', swatch: st => ldStyle(st.ld.style).col, choices: ldChoices, panel: ldPanel },
     { label: '涂装', swatch: skinDot, choices: skinChoices, panel: skinPanel },
-    { label: '垃圾桶', swatch: st => hexOf(st.binColor) || binTypeOf(st.binType).dot, choices: binChoices, panel: binPanel },
   ],
-  stats: st => [{ label: '装载量', value: Math.round(st.load*100) + '%' }, { label: '垃圾桶', value: binLabel(st), small: true }],
+  stats: st => { const r = readouts(st); return [{ label: '吊重', value: r.t.toFixed(1) + ' t' }, { label: '幅度', value: Math.round(r.r) + ' m', small: true }, { label: '高度', value: Math.round(r.h) + ' m', small: true }, { label: '吊物', value: ldLabel(), small: true }]; },
   params: (st, q) => {
-    lookParams(st, q);
-    if (q.has('ex')){ const v = q.get('ex').split('').filter(c => /^[1-5]$/.test(c)).map(Number); for (const k of ORDER) st.p[k] = st.tgt[k] = v.includes(k) ? 1 : 0; }
+    lookParams(st, q); stateParams(st, q);
+    if (q.has('ex')){ const v = q.get('ex').split('').filter(c => new RegExp(`^[1-${NSYS}]$`).test(c)).map(Number); for (const k of ORDER) st.p[k] = st.tgt[k] = v.includes(k) ? 1 : 0; }
     const sel = q.has('sel') ? Number(q.get('sel')) : NaN, sub = q.has('sub') ? Number(q.get('sub')) : NaN;
-    const validSel = Number.isInteger(sel) && sel >= 1 && sel <= 5, validSub = Number.isInteger(sub) && sub >= 1 && sub <= 25;
+    const validSel = Number.isInteger(sel) && sel >= 1 && sel <= NSYS, validSub = Number.isInteger(sub) && sub >= 1 && sub <= NPART;
     if (validSel || validSub){ st.sel = validSel ? sel : SYS_OF(sub); st.p[st.sel] = st.tgt[st.sel] = 1;
       if (validSub && SYS_OF(sub) === st.sel){ st.subSel = sub; st.pull[sub] = 1; } }
-    for (const k of ['hook', 'clamp', 'lift', 'tip', 'lidA', 'binFull', 'hop', 'pk', 'slide', 'blade', 'load', 'gate', 'pile', 'pour', 'dense']){
-      const v = Number(q.get(k)); if (q.has(k) && Number.isFinite(v) && !(k === 'lift' && urlHex(q.get(k)))) st[k] = clamp01(v);   // (?lift=RRGGBB is the lifter's colour)
-    }
-    st.ej = ejOf(st.load);
-    if (q.has('ej')){ const v = Number(q.get('ej')); if (Number.isFinite(v)) st.ej = Math.max(43.4, Math.min(EJ1, v)); }
-    if (['lift', 'tip', 'blade', 'slide', 'eject', 'gate'].includes(q.get('act'))){ st.act = q.get('act'); st.pump = 1; }
+    if (Object.keys(ACT).includes(q.get('act'))){ st.act = q.get('act'); st.pump = /climb/.test(st.act) ? 1 : 0; }
   },
 });
 xrMount(() => ui, () => '');
@@ -317,5 +272,17 @@ xrMount(() => ui, () => '');
   const cancelTap = e => { if (dn && e.pointerId === dn.id) dn = null; };
   svg.addEventListener('pointercancel', cancelTap); svg.addEventListener('lostpointercapture', cancelTap);
   window.__ui = ui;
+  // phone: the labels are numbered badges (the part numbers) and the names go in a list under the figure, in the system colours; a lit label lights its row
+  const lg = document.createElement('div'); lg.className = 'lgd'; svg.parentNode.after(lg);
+  let sig = '';
+  const legend = () => { const rows = new Map();
+    if (innerWidth <= 560) for (const g of svg.querySelectorAll('[data-n][data-t]')) rows.set(+g.dataset.n, [g.dataset.t, g.classList.contains('on')]);
+    const key = [...rows].sort((a, b) => a[0] - b[0]).map(([n, [t, on]]) => n + t + (on ? '*' : '')).join('|'); if (key === sig) return; sig = key;
+    lg.innerHTML = [...rows].sort((a, b) => a[0] - b[0]).map(([n, [t, on]]) => `<div class="${on ? 'on' : ''}"><b style="background:${SYSC[SYS_OF(n)]}">${n}</b>${t}</div>`).join(''); };
+  new MutationObserver(() => requestAnimationFrame(legend)).observe(svg, { childList: true, subtree: true });
+  addEventListener('resize', () => { sig = ''; legend(); });
+  const lcss = document.createElement('style');
+  lcss.textContent = '.stat.small .v[data-k="吊物"]{font-size:13px;font-weight:700;letter-spacing:0;line-height:1.3}@media (max-width:560px){.stats{flex-wrap:wrap}.stat:last-child{flex:1 0 100%}}.toast{left:50%!important;top:auto!important;bottom:6px;transform:translateX(-50%);max-width:300px;width:max-content;text-align:center}@media (min-width:561px){.stats{display:grid;grid-template-columns:auto auto;justify-items:end;gap:2px 18px}.stat:first-child,.stat:last-child{grid-column:1/-1}.actions{display:grid;grid-template-columns:auto auto;justify-items:start;gap:8px 10px;max-width:none}}.lgd{display:none}@media (max-width:560px){.lgd{display:grid;width:100%;box-sizing:border-box;grid-template-columns:1fr 1fr;gap:5px 10px;margin:6px 0 10px;font:600 13px/20px ui-monospace,Menlo,"PingFang SC","Microsoft YaHei",monospace}.lgd:empty{display:none}.lgd div{display:flex;align-items:center;gap:6px;padding:1px 4px;border-radius:999px}.lgd .on{background:rgba(244,184,41,.35)}.lgd b{flex:none;min-width:20px;height:20px;border-radius:10px;color:#fff;font:800 11px/20px ui-monospace,Menlo,monospace;text-align:center}}';
+  document.head.appendChild(lcss);
 })();
 run();

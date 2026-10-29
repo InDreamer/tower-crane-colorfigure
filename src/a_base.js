@@ -1,76 +1,119 @@
-/* 后装压缩式垃圾车 — exploded, working Colorfigure.
-   x = length (front bumper toward +x, tailgate at low x), y = width (+y = the truck's left / driver side, the side
-   seen at the default view), z = up. 1 unit = 5 cm: 8.9 m long, 2.5 m wide, 3.25 m to the warning lights.
+/* 塔式起重机 QTZ80 (塔帽式 hammerhead, 小车变幅 trolley jib, 上回转 top-slewing, 自升 self-climbing) — exploded, working Colorfigure.
+   x = along the jib at slew 0 (jib toward +x, counter-jib toward -x), y = across (+y = the side seen at the default view,
+   where the cab hangs), z = up, ground z = 0. The tower axis is x = 0, y = 0. Proportions are compressed from the real
+   crane (56 m jib, ~40 m free-standing): 4 standard sections (up to 6 after climbing), the jib about 1.2 x the tower's
+   height; trolley, hook block and cab drawn larger so a small child can see them. Read-outs map the jib linearly to
+   56 m at the tip.
 
-   HOW A REAR-LOADING COMPACTOR REALLY WORKS (checked against body specs and patents)
-   - Power: the engine drives the gearbox; a PTO (取力器) on the gearbox side turns a gear pump. The pump draws oil from
-     the tank on the frame rail and sends it along the frame to the multi-way valve (控制阀组) on the tailgate side;
-     the valve sends it to one pair of cylinders at a time and the return oil flows back to the tank.
-   - Bin lifter (挂桶式上料机构), bolted to the tailgate below the loading sill: the worker rolls a 100-1100 L bin in, its lip
-     drops onto the comb and the clamp closes; the lift cylinders raise the carriage on the arms; the tip cylinders turn
-     the arms about the pivot shaft over the sill, the lid falls open and the refuse drops into the hopper (进料口).
-   - Packer in the tailgate (填装器): a slide plate (滑板) runs in two inclined guides, driven by two long slide
-     cylinders; a sweep blade / scraper (刮板) hangs from its lower edge on two sweep cylinders. Cycle: blade opens,
-     slide goes down, blade closes sweeping the hopper, slide goes up carrying the load into the body.
-   - The ejector (推板) inside the body is held by a telescopic cylinder against the load and gives way under back
-     pressure, so the load is packed hard between blade and ejector ("推实") and the ejector creeps forward as the body
-     fills. Full: two lift cylinders raise the tailgate on its top hinges, the ejector runs to the rear and pushes the
-     load out, then returns; the tailgate closes on its rubber seal (密封条).
+   HOW A QTZ TOWER CRANE REALLY WORKS (checked against QTZ80 / TC5610 manuals and specs; conflicts with the reference
+   image are noted at the end)
+   - Base: a cross base (十字底架) of two box beams on 4 concrete ballast blocks (压重); the fixed base section (基础节)
+     stands bolted on its centre. Nothing below the slewing ring ever turns.
+   - Mast: standard sections (标准节), each a square lattice of 4 square-tube main chords, one diagonal per face per bay
+     and horizontals, bolted to the next section at the chord ends (fish plates + 4 bolts per corner). A ladder runs up
+     one inside face with hoops; a rest platform with railing sits every couple of sections.
+   - Climbing (顶升, hydraulic: the only hydraulic motion on the crane): the climbing frame (顶升套架) is a lattice
+     sleeve round the top sections, hung from the lower slewing support, with a working platform. One hydraulic
+     cylinder (顶升油缸) on its rear face pushes on the climbing lugs of the section below; the pump station (液压泵站:
+     motor, pump, tank, valve) on the platform feeds it through hoses. Before climbing the trolley goes to the balance
+     radius and slewing is braked. The cylinder extends: the frame and everything above rise by one section height; a
+     new section, rolled in through the frame's open front face on the introduction beam (引进梁), is bolted on; the
+     cylinder retracts.
+   - Slewing (回转机构): lower support (下支座) on the mast top; slewing ring (回转支承) with its toothed race on the lower
+     support and the other race carrying the upper support (上支座); on the upper support 2 electric slewing motors
+     with vertical planetary reducers whose pinions mesh with the ring gear. Everything above turns together.
+   - Tower top (塔顶 / 塔帽): a 4-leg tapered lattice pinned on the upper support. Tie bars (拉杆) run from its apex to
+     the jib (2 bars, to a point about 2/3 along) and to the counter-jib. A guide sheave near the apex leads the hoist
+     rope from the counter-jib to the jib.
+   - Jib (主臂 / 起重臂): triangular lattice, one top chord and two bottom chords that are also the trolley rails,
+     pinned to the upper support at its root, bolted sections, a tip section with the rope anchor and a sheave.
+     The trolley winch (变幅机构) sits in the jib root section: one drum, two rope ends: one to the trolley's inner end,
+     the other out round the tip sheave and back to its outer end; the drum turning pulls the trolley in or out.
+   - Trolley (小车): a frame on 4 wheels on the bottom chords, 2 sheaves for the hoist rope, a broken-rope safety
+     device (断绳保护) and a hanging maintenance basket. No motor on it (the jib-root winch drives it).
+   - Hoist (起升机构) on the counter-jib: motor -> brake -> gearbox -> drum, under a cover. The hoist rope (起重钢丝绳)
+     runs from the drum to the guide sheave at the tower top, along the jib to the trolley, down round the hook block's
+     sheave and back up (2 falls, 2倍率), then along to the anchor at the jib tip. Winding the drum shortens the falls:
+     the hook rises without the trolley moving.
+   - Counter-jib (反向臂 / 平衡臂): a flat frame with walkway and railings, pinned to the upper support and held by its
+     tie bars. The counterweight blocks (平衡重) hang at its tail; the electric cabinet (电控柜) stands on it.
+   - Hook block (吊钩组): sheave between two side plates painted in yellow-black stripes, the hook on a swivel with a
+     safety latch.
+   - Cab (驾驶室): on a bracket at the side of the upper support, turning with it; seat, control console, windows.
+   - Safety: moment limiter (力矩限制器) on the tower top's main chord, load and height limiters at the hoist drum,
+     anemometer (风速仪) on the tower top, red obstruction lights (障碍灯) on the apex and the jib tip.
+   - Hoist, slewing and trolley are electric; while they run, the ropes run and the drums and motors turn.
+   - Load chart (simplified QTZ80): 6 t up to about 13 m radius, then the rated moment is constant down to about
+     1.0 t at the 56 m tip. The moment limiter stops the trolley going out and the hook going up when the load is
+     over the chart.
 
-   PARTS (each fixed to the one named after it)
-   1 CHASSIS  cab-over cab (doors, windows, windscreen, wipers, grille, lamps, mirrors on arms, steps, roof beacon)
-              on the frame . engine (block, head, cover, sump, manifolds, turbo, fan, radiator, alternator, filters) on
-              the rails . gearbox + bell housing + PTO behind it . propshaft (2 pieces + centre bearing on a cross
-              member) to the first drive axle, inter-axle shaft to the second . front beam axle on leaf springs .
-              tandem drive axles (diffs, hubs) on a bogie spring with a trunnion on the rails . ladder frame (2 rails,
-              cross members) . 10 wheels (rims, hubs, nuts, tread) . bumper, fuel tank, muffler, battery box, air tanks
-   2 BODY     subframe on the rails . floor, roof, front wall, 2 side panels with ribs and chords . ejector + guide
-              shoes + telescopic cylinder from the front wall . tailgate on 2 top hinges, 2 lift cylinders from the body
-              sides . slide plate in guides, 2 slide cylinders . sweep blade, 2 sweep cylinders . seal round the rear
-              opening . mudguards + flaps on the body underside . reflective stripes, lamps
-   3 LIFTER   2 mount plates bolted to the tailgate under the sill + pivot shaft . 2 arms on the shaft . carriage with
-              comb and clamp sliding on the arms . 2 lift cylinders (arm foot to carriage) . 2 tip cylinders (mount
-              plate to the crank on the shaft) . a bin (5 styles: wheelie, 4-wheel cart, drum, dome, pedal; 100-1100 L;
-              four waste-sorting colours; src/e_bins.js)
-   4 HYDRAULIC gear pump on the PTO . oil tank on brackets on the left rail (breather, sight glass, return filter) .
-              valve block with levers on the tailgate's left side . hoses pump -> valve -> every cylinder pair, return
-              -> tank, clipped along the rails, under the body floor and over the tailgate hinge
-   5 OTHER    control box on the body's front left . operation panel at the tailgate's rear left . loading-sill frame
-              (进料口) . safety: 2 beacons on the tailgate, roof beacon, emergency stops, side guard rails between the
-              axles on brackets from the rails */
+   PARTS (each fixed to the one named after it; 1-12 are the reference image's numbers, 13+ are added real parts)
+   1 TOWER    ① 基础节: cross base, 4 ballast blocks, the fixed base section . ⑩ 塔身节 x4 (chords cut at the
+              section joints, diagonals, horizontals, fish plates) . ㉒ 爬梯与平台: ladder with hoops, rest platforms
+   2 SLEW     ⑤ 回转机构: lower support, slewing ring with gear teeth, upper support, 2 motors + reducers + pinions .
+              ⑪ 塔顶: 4-leg tapered lattice, apex sheave . ⑥ 驾驶室: on its bracket, seat and console inside
+   3 JIB      ⑦ 主臂: root section, middle sections, tip section . ④ 变幅机构: winch in the jib root . ⑧ 小车:
+              frame, wheels, sheaves, broken-rope device, basket . ⑭ 起重臂拉杆 x2: apex to the jib
+   4 COUNTER  ③ 反向臂: frame, walkway, railings . ② 平衡重 x4 blocks . ⑬ 起升机构: motor, brake, gearbox, drum,
+              cover . ⑱ 电控柜 . ㉓ 平衡臂拉杆 x2: apex to the counter-jib
+   5 ROPES    ⑫ 起重钢丝绳: drum -> apex sheave -> jib -> trolley -> hook block -> trolley -> jib tip anchor .
+              ㉔ 变幅钢丝绳: winch drum -> trolley inner end; drum -> tip sheave -> trolley outer end . ⑨ 吊钩组:
+              side plates (yellow-black), sheave, swivel, hook, latch
+   6 CLIMB+SAFETY ⑮ 顶升套架: sleeve lattice, platform, introduction beam . ⑯ 顶升油缸 . ⑰ 液压泵站: motor, pump,
+              tank, hoses to the cylinder . ⑲ 力矩限制器 . ⑳ 风速仪 . ㉑ 障碍灯 (apex, jib tip)
+   Details: load-chart plates on the jib, walkway railings, platform railings, gusset plates at the lattice joints.
+
+   WHERE THE REFERENCE IMAGE IS WRONG (the real crane wins)
+   - its subtitle says 动臂 (luffing jib): a QTZ crane has a flat jib with a trolley;
+   - its ④ 变幅机构 sits on the counter-jib: that is the hoist (⑬ 起升机构); the trolley winch is in the jib root;
+   - its ⑫ points at the tie bars: those are rigid bars (⑭ ㉓); the hoist rope runs along the jib to the hook;
+   - it shows a slewing ring at the mast foot too: only the top slews; the base has none;
+   - it shows a motor on the trolley: the standard QTZ80 trolley is rope-driven from the jib root.         */
+
 
 const CJKF = "ui-monospace,Menlo,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC','WenQuanYi Zen Hei',monospace";
+// the three repaintable zones (src/g_skin.js rewrites them in place): tower + jib yellow, cab white, motor blue
+const YEL  = { l:'#ffd34d', m:'#f3b11b', d:'#b6760b' };
 const CABW = { l:'#fbfaf5', m:'#e4e4dd', d:'#bfc2bc' };
-const GRN  = { l:'#80c556', m:'#5fa43c', d:'#376a22' };
-const GRND = { l:'#5fa43c', m:'#4a8a2e', d:'#2a5218' };
-const ORG  = { l:'#f7a83e', m:'#df842b', d:'#9c5414' };
-const BLU  = { l:'#6d8cf0', m:'#4766cf', d:'#28388a' };
-const CHS  = { l:'#62666c', m:'#43464b', d:'#25272b' };
-const TYRE = { l:'#4c4c4f', m:'#323235', d:'#1b1b1d' };
-const RIM  = { l:'#f1f2f0', m:'#c9ccca', d:'#8e9391' };
+const MOT  = { l:'#5d9be8', m:'#2f6fcb', d:'#1b3f86' };
+// fixed materials: ballast, counterweights, ropes, hook block stripes, hydraulics, steel, rubber, reflective
+const CONC = { l:'#d6d7d3', m:'#b2b4b0', d:'#7e817f' };
+const CWT  = { l:'#a8afb4', m:'#838b91', d:'#555c61' };
+const ROPE = { l:'#a3aab1', m:'#6b727a', d:'#464b52' };      // ropes: mid steel grey (core), inked outline; the tie bars (BAR) are lighter and flat
+const BAR  = { l:'#e3e6ea', m:'#bcc2c9', d:'#8a919a' };      // tie bars: light galvanised steel
+const HKY  = { l:'#ffdc50', m:'#f6b900', d:'#b98600' };
+const HKB  = { l:'#4b4b4e', m:'#2a2a2c', d:'#111112' };
+const HYD  = { l:'#78a2ea', m:'#4d78cf', d:'#2b4a96' };
+const STL  = { l:'#a7adb2', m:'#7d848b', d:'#4c5157' };
+const DKS  = { l:'#5f656b', m:'#454a50', d:'#2a2d31' };
 const RED  = { l:'#f0614f', m:'#cf4131', d:'#88251a' };
-const ENG  = { l:'#5c6066', m:'#46494e', d:'#2d2f33' };
 const ALU  = { l:'#e9ecec', m:'#c3c9cb', d:'#8b9497' };
 const RUB  = { l:'#3d3d40', m:'#2a2a2c', d:'#161617' };
 const AMB = '#f6b73c', GLASS = '#bfe0ea';
-let RFL = '#e8463a';     // reflective red: a skin (src/g_skin.js) may repaint it, like the CABW / GRN / GRND / ORG palettes above
-const SYSC = ['', '#3b7be0', '#45a33a', '#ef8a1c', '#5a50d4', '#e0463a'];
-const SYSN = ['', '驾驶室与底盘', '垃圾箱', '上料机构', '液压系统', '其他部件'];
-const PNAME = ['', '驾驶室', '发动机', '变速箱', '传动轴', '前后桥', '车架', '车轮/轮胎', '箱体', '压缩装置', '推板', '侧板', '后门', '密封条',
-  '挂桶提升装置', '翻斗装置', '液压油缸', '连接架', '液压泵', '液压油箱', '控制阀组', '油管', '电控系统', '操作面板', '进料口', '安全装置'];
-const SYS_OF = n => n <= 7 ? 1 : n <= 13 ? 2 : n <= 17 ? 3 : n <= 21 ? 4 : 5;
+const SYSC = ['', '#45a33a', '#ef8a1c', '#d9a514', '#3b7be0', '#8a4fd0', '#e0463a'];
+const SYSN = ['', '塔身与基础', '回转与塔顶', '起重臂', '平衡臂', '钢丝绳与吊钩', '顶升与安全'];
+const PNAME = ['', '基础节', '平衡重', '反向臂', '变幅机构', '回转机构', '驾驶室', '主臂', '小车', '吊钩组', '塔身节', '塔顶', '起重钢丝绳',
+  '起升机构', '起重臂拉杆', '顶升套架', '顶升油缸', '液压泵站', '电控柜', '力矩限制器', '风速仪', '障碍灯', '爬梯与平台', '平衡臂拉杆', '变幅钢丝绳'];
+// the reference image numbers its parts by where they are, not by system, so the system is looked up
+const SYS_TAB = [0, 1, 4, 4, 3, 2, 2, 3, 3, 5, 1, 2, 5, 4, 3, 6, 6, 6, 4, 6, 6, 6, 1, 4, 5];
+const SYS_OF = n => SYS_TAB[n] || 0;
+const NPART = PNAME.length - 1, NSYS = SYSN.length - 1;
+const SYS_IDS = Array.from({ length: NSYS }, (_, i) => i + 1);      // 1..NSYS
+const zeros = () => new Array(NSYS + 1).fill(0);                     // one slot per system (slot 0 unused)
 
-/* ---------- key dimensions (1 unit = 5 cm) ---------- */
-const YC = 25;
-const RAIL_Y = [16.4, 33.6], RAIL_T = 1.4, RZ0 = 16, RZ1 = 21.5;   // frame rails (outer faces), web thickness, bottom, top
-const WR = 10.5, AX_F = 150, AX_R = [62, 89];    // wheel radius, front axle, the two rear axles
-const BX0 = 40, BX1 = 134, BZ0 = 23, BZ1 = 63;   // body box (floor bottom .. roof top)
-const HINGE = [40, 64.5];                        // tailgate hinge (x, z)
-const PIV = [5.5, 28];                           // lifter pivot shaft (x, z)
-const EJ0 = 48, EJ1 = 112;                       // ejector x when empty / full
-const GATE_PROF = [[40,64.5],[22,65],[13,55],[9,42],[9,26],[10.5,19],[15,14.5],[26,13],[36,15],[40,19]];
-const CAB_PROF = [[141,27],[171,27],[172.5,30],[172.5,41],[171.8,44],[168.3,56],[165.8,60],[143,60],[141,58]];
-const GU0 = [23, 28], GU1 = [30, 46];            // slide guide: lower / upper position of the blade pivot
+/* ---------- key dimensions (abstract units; the mast is 10 across, a standard section 16 high) ---------- */
+const SEC_H = 16, SEC_W = 5, CHR = .7;               // mast section: height, chord centre offset, chord half thickness
+const ZB = 8, ZM = 16, NSEC_MIN = 4, NSEC_MAX = 6;   // base section bottom, first standard section bottom, section counts
+const GAP1 = 11, GAPT = 29;                          // exploded: extra gap per section; the gap above the top section is the climbing frame's room
+const ZLO = 80;                                      // lower support bottom with 4 sections (frames add more after climbing)
+const JX0 = 7.4, JBAY = 10, JNB = 10, JX1 = JX0 + JBAY*JNB;   // jib: root, bay length, bays (the last is the tip bay), tip
+const JZB = 86.2, JZT = 93.2, JY = 4.2;              // jib bottom bar top, top chord underside, bottom node half width
+const CJX1 = -47.4, CJ_BAY = 8;                      // counter-jib tail; bays of 8 from the upper support
+const APZ = 118.5;                                   // apex sheave centre height
+const HZ0 = 45;                                      // hook sheave centre height the hook block is modelled at
+const RZ = 83.8;                                     // hoist rope run under the jib (top of the trolley sheaves)
+const MAXR = 56, RADIUS_X = JX1;                     // read-out: the tip is 56 m out
+const radiusM = x => x/RADIUS_X*MAXR;
 
 /* ---------- small vector helpers ---------- */
 const vadd = (a, b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]], vsc = (a, k) => [a[0]*k, a[1]*k, a[2]*k];
@@ -80,60 +123,80 @@ const sstep = t => { t = clamp01(t); return t*t*(3 - 2*t); };
 const rotXZ = (p, c, a) => { const s2 = Math.sin(a), c2 = Math.cos(a), dx = p[0] - c[0], dz = p[2] - c[1];
   return [c[0] + dx*c2 - dz*s2, p[1], c[1] + dx*s2 + dz*c2]; };
 const rotN = (n, a) => { const s2 = Math.sin(a), c2 = Math.cos(a); return [n[0]*c2 - n[2]*s2, n[1], n[0]*s2 + n[2]*c2]; };
+// rotate about the vertical axis through the tower (positive = counter-clockwise seen from above). (core.js owns the name rotXY, so this is rotZ)
+const rotZ = (p, a) => { const s2 = Math.sin(a), c2 = Math.cos(a); return [p[0]*c2 - p[1]*s2, p[0]*s2 + p[1]*c2, p[2]]; };
 
-/* ---------- frames: every part is modelled where it sits on the assembled truck, in one of these frames ----------
-   ch   frame rails and all that hangs on them        cab   the cab
-   body subframe, box, ejector                        gate  tailgate (turns on the top hinges)
-   lift lifter mount (on the tailgate)                arm   the tipping arms (turn on the pivot shaft)
-   carr carriage + comb (slides up the arms)          bin   the bin (hooked: rides the carriage)
-   olb  the bin just swapped out (slides away; only while a swap shows)                                                  */
+/* ---------- frames: every part is modelled where it sits on the assembled crane, in one of these frames ----------
+   g     ground: cross base, base section                 s0..s5  standard mast sections (local z 0..16 from the section's foot)
+   lo    mast top: lower support, slewing ring (rides up with the climb, never turns)
+   cf    climbing frame (hangs from the lower support)    up      everything that turns: slew about z, then the climb
+   su    upper support, motors, pinions   top  tower top   cab  cab and bracket   jib  jib and its tie bars
+   cj    counter-jib and its tie bars     cw   counterweights (drop out of cj)
+   trol  trolley (in jib: x = st.trolley; local x is 0 at its centre)       hook  hook block (local z = hook sheave height at HZ0)
+   load  the load: on its spot or on the hook      pad plat  the pick pad and the building: scenery fixed to the ground      */
 const FT = {}, FN = {}, FT0 = {};
+const SU_LIFT = 12, TOP_LIFT = 26, CAB_OUT = 18, CAB_UP = 6, JIB_OUT = 26, JIB_UP = 6, CJ_OUT = -26, CJ_UP = 6, CW_DROP = 18, CF_DOWN = 34;
 function makeFrames(st, e, T, N){
-  const ga = -st.gate*68*Math.PI/180, ta = -st.tip*135*Math.PI/180, lh = st.lift*7;
-  const cabO = vsc([30, 0, 46], e[1]), bodyO = vsc([0, 0, 56], e[2]), liftO = vsc([-38, 0, 6], e[3]);
-  T.ch = p => p; N.ch = n => n;
-  T.cab = p => vadd(p, cabO); N.cab = n => n;
-  T.body = p => vadd(p, bodyO); N.body = n => n;
-  T.gate = p => T.body(rotXZ(p, HINGE, ga)); N.gate = n => rotN(n, ga);
-  T.lift = p => vadd(T.gate(p), liftO); N.lift = N.gate;
-  T.arm = p => T.lift(rotXZ(p, PIV, ta)); N.arm = n => rotN(rotN(n, ta), ga);
-  T.carr = p => T.arm([p[0], p[1], p[2] + lh]); N.carr = N.arm;
-  // the bin hangs by its lifting lip: a bin whose lip sits lower than the comb (120 L) is raised by bin.dz while it hooks on
-  const bx = -8*(1 - st.hook), dz = binSpec(st).dz;
-  // a swap (st.swapT 1 -> 0, only a picture: the state already holds the new bin): the new bin slides in from behind, the old one (frame 'olb') slides off sideways
-  const sw = st.swapT > 0 ? st.swapT : 0, ou = 1 - sw;
-  T.bin = p => st.hook >= 1 ? T.carr([p[0], p[1], p[2] + dz]) : vadd(vadd([p[0] + bx - 20*sw*sw*(1 - st.hook), p[1], p[2] + dz*st.hook], bodyO), liftO);
-  N.bin = n => st.hook >= 1 ? N.carr(n) : n;
-  T.olb = p => vadd(vadd([p[0] - 8, p[1] + 46*ou*ou, p[2]], bodyO), liftO); N.olb = n => n;
+  const sl = st.slew, ns = st.nsec, ru = (ns - NSEC_MIN + st.climb)*SEC_H + (ns*GAP1 + GAPT)*e[1];
+  const id = n => n, zlift = (p, dz) => [p[0], p[1], p[2] + dz];
+  T.g = id; N.g = id;
+  for (let i = 0; i < NSEC_MAX; i++){ const dz = ZM + SEC_H*i + (i + 1)*GAP1*e[1]; T['s' + i] = p => zlift(p, dz); N['s' + i] = id; }
+  T.lo = p => zlift(p, ru); N.lo = id;
+  T.cf = p => zlift(p, ru - CF_DOWN*e[6]*(1 - .88*e[1])); N.cf = id;
+  T.up = p => { const q = rotZ(p, sl); q[2] += ru; return q; }; N.up = n => rotZ(n, sl);
+  const upOff = (k, o) => { T[k] = p => T.up(vadd(p, o)); N[k] = N.up; };      // a shift in the turning frame turns with it
+  upOff('su', [0, 0, SU_LIFT*e[2]]); upOff('top', [0, 0, TOP_LIFT*e[2]]); upOff('cab', vsc([0, CAB_OUT, CAB_UP], e[2]));
+  upOff('jib', vsc([JIB_OUT, 0, JIB_UP], e[3])); upOff('cj', vsc([CJ_OUT, 0, CJ_UP], e[4]));
+  upOff('cw', vadd(vsc([CJ_OUT, 0, CJ_UP], e[4]), [0, 0, -CW_DROP*e[4]]));
+  T.trol = p => T.jib([p[0] + st.trolley, p[1], p[2]]); N.trol = N.up;
+  T.hook = p => T.trol([p[0], p[1], p[2] + st.hookZ - HZ0]); N.hook = N.up;
+  // the load: on its spot, or on the hook (loadPose); the pad and the building are fixed to the ground; a section on its way in rolls in along +x
+  const ld = loadPose(st);
+  T.load = p => vadd(rotZ(p, ld.yaw), ld.p); N.load = n => rotZ(n, ld.yaw); T.pad = id; N.pad = id; T.plat = id; N.plat = id;
+  if (st.sx != null){ const i = st.nsec, dz = ZM + SEC_H*i + (i + 1)*GAP1*e[1]; T['s' + i] = p => [p[0] + st.sx, p[1], p[2] + dz]; }
 }
-// FT: where every frame is now; FT0: the same with nothing taken apart (the hydraulic system, taken apart, keeps its
-// hoses in their assembled shape; left in place, its pieces follow whatever they are fixed to)
-function setFrames(st){ makeFrames(st, st.E, FT, FN); makeFrames(st, [0, 0, 0, 0, 0, 0], FT0, {}); }
+// FT: where every frame is now; FT0: the same with nothing taken apart (the ropes, taken apart, keep their assembled
+// shape; left in place, their pieces follow whatever they are fixed to)
+function setFrames(st){ makeFrames(st, st.E, FT, FN); makeFrames(st, zeros(), FT0, {}); }
 
 /* ---------- parts: built in local (assembled) coordinates through the current context, then sorted once ---------- */
 let PARTS = [], CX = null, GST = null;
+const OFF = {};                                       // the offset each part was last built with (a hose end follows the part it is on)
 // sub-part pull directions (a separated system's part, clicked)
-const PULL = { 1:[16,0,10], 2:[0,40,4], 3:[0,36,2], 4:[0,30,0], 5:[0,0,0], 6:[0,-34,0], 7:[0,0,0], 8:[0,0,12], 9:[0,46,6], 10:[0,62,0],
-  11:[0,0,0], 12:[-18,0,0], 13:[-12,0,0], 14:[-12,0,0], 15:[-8,0,10], 16:[0,0,0], 17:[0,0,-6], 18:[0,16,0], 19:[0,14,0], 20:[0,14,0],
-  21:[0,0,-6], 22:[0,10,0], 23:[-6,10,0], 24:[-14,0,0], 25:[0,0,0] };
-// set the context for the parts that follow: frame, part number (1..25 decides the system), options
-//   o.xo   other-parts system: where this piece moves when its system is taken apart
-//   o.pull this piece's own pull direction when its part is clicked (wheels, side panels: outward)
+const PULL = { 1:[0,-36,0], 2:[-16,0,0], 3:[0,0,-14], 4:[0,0,22], 5:[0,-30,0], 6:[0,30,0], 7:[0,0,18], 8:[0,0,-16], 9:[0,0,-26], 10:[0,36,0],
+  11:[0,0,20], 12:[0,-18,0], 13:[0,0,22], 14:[0,0,16], 15:[0,0,-24], 16:[-16,0,0], 17:[0,14,0], 18:[0,0,18], 19:[16,0,0], 20:[0,0,16],
+  21:[0,0,16], 22:[-30,0,0], 23:[0,0,16], 24:[0,0,16] };       // (part 10: only the second mast section comes out)
+const SYS_OFF = [0, 0, 0, 0, 0, [55, -75, -10], 0];     // a system's whole-group shift when taken apart (ropes and hook slide out toward -y and +x, clear of the mast and the jib)
+const KEEP = [0, 0, 0, 0, 0, 1, 0];                       // systems that keep their assembled shape when taken apart
+// the position of a local point in frame fr for the part now being built (this part's offsets, and the assembled-shape blend of a KEEP system)
+function frameAt(fr, p){
+  const k = CX.keep;
+  if (!k) return FT[fr](p);
+  const a = FT0[fr](p), b = FT[fr](p);
+  return [0, 1, 2].map(i => a[i] + (b[i] - a[i])*(1 - k));
+}
+// set the context for the parts that follow: frame, part number (1..NPART decides the system), options
+//   o.shell this piece is a cover that fades in see-through; o.lat it is lattice that fades a little (ropes inside show)
+//   o.xo   extra shift of this piece when its system is taken apart (the hook drops further than the ropes)
+//   o.pull this piece's own pull direction when its part is clicked
+const SLEWS = new Set(['up', 'su', 'top', 'cab', 'jib', 'cj', 'cw', 'trol', 'hook', 'load']);      // frames that turn with the slew: their shifts turn with them
 function use(fr, n, o = {}){
-  const st = GST, sys = SYS_OF(n);
+  const st = GST, sys = SYS_OF(n), rz = SLEWS.has(fr) ? v => rotZ(v, st.slew) : v => v;
   let off = [0, 0, 0];
-  if (sys === 4) off = vadd(off, vsc([0, 40, -4], st.E[4]));
-  if (sys === 5 && o.xo) off = vadd(off, vsc(o.xo, st.E[5]));
+  if (SYS_OFF[sys]) off = vadd(off, rz(vsc(SYS_OFF[sys], st.E[sys])));
+  if (o.xo) off = vadd(off, rz(vsc(o.xo, st.E[sys])));
   const pv = o.pull || PULL[n], pk = st.pull[n] || 0;
-  if (pk && pv) off = vadd(off, vsc(pv, pk));
-  const k4 = st.E[4], tf = sys === 4 && k4 > 0 ? (p => { const a = FT0[fr](p), b = FT[fr](p); return [0,1,2].map(i => a[i] + (b[i] - a[i])*(1 - k4)); }) : FT[fr];
-  CX = { fr, n, sys, off, tf, shell: !!o.shell, wheel: !!o.wheel, T: p => vadd(tf(p), off), N: FN[fr] };
+  if (pk && pv) off = vadd(off, rz(vsc(pv, pk)));
+  const keep = KEEP[sys] && st.E[sys] > 0 ? st.E[sys] : 0;
+  OFF[n] = off;
+  CX = { fr, n, sys, off, keep, shell: !!o.shell, lat: !!o.lat, T: null, N: FN[fr] };
+  CX.T = p => vadd(frameAt(fr, p), off);
 }
 const wpt = p => CX.T(p);
-const wAt = (fr, p) => { const k4 = GST.E[4]; if (CX.sys !== 4 || !k4) return vadd(FT[fr](p), CX.off); const a = FT0[fr](p), b = FT[fr](p); return vadd([0,1,2].map(i => a[i] + (b[i] - a[i])*(1 - k4)), CX.off); };              // a point in another frame, with this part's offsets
+// a point in another frame, with this part's offsets (or those of part n: a hose end sits on the part it is fixed to)
+const wAt = (fr, p, n) => vadd(frameAt(fr, p), n && (!CX.keep || SYS_OF(n) === CX.sys) ? OFF[n] || [0, 0, 0] : CX.off);   // a KEEP system's ropes move as one group: only ends on its own parts follow them
 const wpd = (pts, close = true) => pd(pts.map(wpt), close);
 const fvis = n => vis(CX.N(n));
-const side = y => y > YC ? 1 : -1;
 function bboxOf(pts){ const a = [1e9,1e9,1e9], b = [-1e9,-1e9,-1e9];
   for (const p of pts) for (let i = 0; i < 3; i++){ if (p[i] < a[i]) a[i] = p[i]; if (p[i] > b[i]) b[i] = p[i]; } return [a, b]; }
 // outward face planes of a convex solid between two rings (used to order a part against things outside it)
@@ -145,7 +208,7 @@ function planesOf(A, B){
   return pl;
 }
 function push(svg, wp, o = {}){
-  const part = { svg, pts: wp, planes: o.planes, box: bboxOf(wp), sys: CX.sys, n: CX.n, shell: o.shell ?? CX.shell, wheel: CX.wheel, rank: o.rank ?? ((o.shell ?? CX.shell) ? 1 : 0) };
+  const part = { svg, pts: wp, planes: o.planes, box: bboxOf(wp), sys: CX.sys, n: CX.n, fr: CX.fr, shell: o.shell ?? CX.shell, lat: CX.lat, rank: o.rank ?? ((o.shell ?? CX.shell) ? 1 : 0) };
   PARTS.push(part); return part;
 }
 const polyN = p => { let nx = 0, ny = 0, nz = 0;
@@ -184,6 +247,24 @@ function gR(a, b, r, m, w = .7, o = {}){
   for (const [e, rr] of [[A, r], [Bp, r1]]) for (let i = 0; i < sides; i++){ const t = i/sides*2*Math.PI, c = Math.cos(t)*rr, s = Math.sin(t)*rr; pts.push([0,1,2].map(k => e[k] + u[k]*c + v[k]*s)); }
   return push(rod(A, Bp, r, m, o.sh || toneI, w, r1, sides) + (o.deco ? o.deco() : ''), pts, { ...o, planes: planesOf(pts.slice(0, sides), pts.slice(sides)) });
 }
+// flat bar between two local points: half width hy across local y, half thickness ht in the other direction (a plate on edge: tie bars, eye plates)
+function gFlat(a, b, hy, ht, m, w = .5, o = {}){
+  const A = wpt(a), Bp = wpt(b), L = Math.hypot(...sub(Bp, A)); if (L < 1e-9) return null;
+  const d = sub(Bp, A).map(v => v/L), uy = norm(sub(wpt([0, 1, 0]), wpt([0, 0, 0]))), u = norm(sub(uy, vsc(d, dot(d, uy)))), v = cross(d, u);
+  const ring = e => [[1,1],[-1,1],[-1,-1],[1,-1]].map(([cu, cv]) => [0,1,2].map(q => e[q] + hy*cu*u[q] + ht*cv*v[q])), R0 = ring(A), R1 = ring(Bp);
+  return push(solid(R0, R1, m, w, o.sh || tone) + (o.deco ? o.deco() : '') + hullInk([...R0, ...R1], o.ink ?? 1), [...R0, ...R1], { ...o, planes: planesOf(R0, R1) });
+}
+// a tie bar (parts 14, 23) from a to b: flat steel bar in two lengths, an eye plate with pin heads at each end and a bolted splice sleeve
+// at the joint; BAR is light galvanised steel so it never reads as a (dark, thin) rope
+function tieBar(a, b, o = {}){
+  const L = Math.hypot(...sub(b, a)), d = sub(b, a).map(v => v/L), m = vadd(a, vsc(d, L*(o.mid ?? .5))), ey = 2.4, sl = 1.7, hy = .85, ht = .42, sg = a[1] < 0 ? -1 : 1;
+  const e1 = vadd(a, vsc(d, ey)), e2 = vadd(b, vsc(d, -ey));
+  gFlat(a, e1, 1.1, .55, DKS, .5, { ink: .9 }); gFlat(b, e2, 1.1, .55, DKS, .5, { ink: .9 });
+  gFlat(e1, vadd(m, vsc(d, -sl)), hy, ht, BAR, .5, { ink: 1.1 }); gFlat(vadd(m, vsc(d, sl)), e2, hy, ht, BAR, .5, { ink: 1.1 });
+  gFlat(vadd(m, vsc(d, -sl)), vadd(m, vsc(d, sl)), 1.25, .7, DKS, .5, { ink: 1.2 });
+  for (const [p, s] of [[a, 1.1], [b, 1.1], [vadd(m, vsc(d, -sl*.55)), 1.25], [vadd(m, vsc(d, sl*.55)), 1.25]]) for (const q of [-1, 1])
+    gR([p[0], p[1] + q*s, p[2]], [p[0], p[1] + q*(s + .4), p[2]], .6, STL, .4, { sides: 10, ink: .8 });
+}
 // hydraulic cylinder: barrel from a toward b (length bl), chromed rod for the rest
 function gCyl(a, b, rb, bl, m, o = {}){
   if (!o.world){ a = wpt(a); b = wpt(b); }
@@ -192,25 +273,41 @@ function gCyl(a, b, rb, bl, m, o = {}){
   const p1 = gR(a, e, rb, m, .8, ow), p2 = gR(vadd(a, vsc(d, Math.max(0, bl2 - .4))), b, rb*.45, ALU, .6, ow);
   return [p1, p2].filter(Boolean);
 }
-// hose along points (a point may be {fr, p} to sit in another frame), cut into pieces so it sorts with solids;
-// while oil flows a bright dash runs along it (dir -1: the other way)
-function gHose(pts, flow, dir = 1, wd = .55){
-  const W = pts.map(p => p.fr ? wAt(p.fr, p.p) : wpt(p));
+// a line of thin square-section pieces along points (a point may be {fr, p[, n]} to sit in another frame), cut so it sorts with
+// solids: hoses (part 17: dark blue, a bright oil dash while it flows) and ropes (parts 12, 24: steel grey, a light dash while
+// it runs). o = { n: part number, col, flow: dash colour, dash: dash pattern, seg: a shared id for several lines }
+function gHose(pts, flow, dir = 1, wd = .55, o = {}){
+  const n = o.n ?? 17, col = o.col ?? '#2f3a5c', fc = o.flow ?? '#86c8ff', dash = o.dash ?? '2.2 2.4', sys = SYS_OF(n);
+  const W = pts.map(p => p.fr ? wAt(p.fr, p.p, p.n) : wpt(p));
   let acc = 0;
-  const hoseId = PARTS.length;                 // pieces of one hose share an id (and are never ordered against their neighbour)
+  const hoseId = o.seg ?? PARTS.length;          // pieces of one line share an id (and are never ordered against their neighbour)
   for (let i = 0; i < W.length - 1; i++){
     const a = W[i], b = W[i+1], d2 = pd([a, b], false), ln = Math.hypot(...sub(b, a));
     if (ln < 1e-6) continue;
-    let s = `<path d="${d2}" fill="none" stroke="${INK}" style="stroke-width:${f(wd*2 + .45)}" stroke-linecap="round"/><path d="${d2}" fill="none" stroke="#2f3a5c" style="stroke-width:${f(wd*2)}" stroke-linecap="round"/>`;
-    if (flow > 0) s += `<path d="${d2}" fill="none" stroke="#86c8ff" style="stroke-width:${f(wd*1.1)}" stroke-dasharray="2.2 2.4" stroke-dashoffset="${f(acc - dir*GST.clock*16)}" stroke-linecap="round" opacity="${f(flow)}"/>`;
+    let s = `<path d="${d2}" fill="none" stroke="${INK}" style="stroke-width:${f(wd*2 + .45)}" stroke-linecap="round"/><path d="${d2}" fill="none" stroke="${col}" style="stroke-width:${f(wd*2)}" stroke-linecap="round"/>`;
+    if (o.hi) s += `<path d="${d2}" fill="none" stroke="${o.hi}" style="stroke-width:${f(wd*.55)}" stroke-dasharray="${f(wd*3)} ${f(wd*3.4)}" stroke-dashoffset="${f(-acc)}"/>`;      // the lay of the strands
+    if (flow > 0) s += `<path d="${d2}" fill="none" stroke="${fc}" style="stroke-width:${f(wd*1.1)}" stroke-dasharray="${dash}" stroke-dashoffset="${f(acc - dir*GST.clock*16)}" stroke-linecap="round" opacity="${f(flow)}"/>`;
     acc += ln;
-    // a hose piece is a thin square-section rod: a real convex solid, so it sorts like every other part
-    const d = norm(sub(b, a)), u = norm(cross(d, Math.abs(d[2]) < .9 ? [0,0,1] : [1,0,0])), v = cross(d, u), hw = wd + .22, ring = e => [[1,1],[-1,1],[-1,-1],[1,-1]].map(([cu, cv]) => [0,1,2].map(k => e[k] + hw*(cu*u[k] + cv*v[k])));
-    const A = ring(a), B = ring(b), pts = [...A, ...B];
-    PARTS.push({ svg: s, pts, planes: planesOf(A, B), box: bboxOf(pts), sys: 4, n: 21, shell: false, rank: 0, hose: true, seg: hoseId });
+    // a piece is a thin square-section rod: a real convex solid, so it sorts like every other part
+    const d = norm(sub(b, a)), u = norm(cross(d, Math.abs(d[2]) < .9 ? [0,0,1] : [1,0,0])), v = cross(d, u), hw = wd + (o.pad ?? .22), ring = e => [[1,1],[-1,1],[-1,-1],[1,-1]].map(([cu, cv]) => [0,1,2].map(k => e[k] + hw*(cu*u[k] + cv*v[k])));
+    const A = ring(a), B = ring(b), pp = [...A, ...B];
+    PARTS.push({ svg: s, pts: pp, planes: planesOf(A, B), box: bboxOf(pp), sys, n, shell: false, rank: 0, hose: true, seg: hoseId });
   }
 }
+// build with an extra local transform in front of the current frame (a part turning on its own pin)
+function withXf(xf, nf, fn){ const T0 = CX.T, N0 = CX.N; CX.T = p => T0(xf(p)); CX.N = n => N0(nf(n)); fn(); CX.T = T0; CX.N = N0; }
+// text lying on a local plane (origin p, reading direction u, down direction v as local vectors)
+const gTxt = (p, u, v, str, size, col = INK, wt = 800) => { const o = P(...wpt(p));
+  return `<text transform="${txM(o, Dv(...CX.N(u)), Dv(...CX.N(v)))}" font-size="${size}" fill="${col}" text-anchor="middle" font-family="${CJKF}" font-weight="${wt}">${str}</text>`; };
 // decoration on a local plane face: draws fn() only while the face (local normal n) faces the viewer
 const onF = (n, fn) => fvis(n) ? fn() : '';
 const dpoly = (pts, col, w = .6) => shape(pts.map(wpt), col, w);
 const dline = (pts, w = .6, col = INK) => `<path d="${wpd(pts, false)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+// a rod between two points of a lattice face with its ends pulled back from the chords it joins: hw = the chord's half thickness
+// across the face, r = this member's radius; the end disc then stops just off the chord's surface
+function strut(a, b, sep, hw, r, m, o = {}){
+  const L = Math.hypot(...sub(b, a)), u = sub(b, a).map(v => v/L), c = Math.abs(dot(u, sep)) || 1, t = (hw + r*.55)/c;
+  if (L < 2*t + .2) return null;
+  return gR(vadd(a, vsc(u, t)), vadd(b, vsc(u, -t)), r, m, o.w ?? .5, { sides: o.sides || 4, ...o });
+}
+const rnd = i => { const x = Math.sin(i*127.1 + 311.7)*43758.5453; return x - Math.floor(x); };
